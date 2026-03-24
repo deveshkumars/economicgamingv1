@@ -24,15 +24,16 @@ export default function ProgressPanel({ visible, isRunning, progress }: Props) {
   if (!visible) return null
 
   return (
-    <div className="progress-panel active">
-      <h3>
+    <div className="progress-panel">
+      <div className="progress-panel-header">
         {isRunning && <span className="spinner" />}
-        Analysis Progress
-      </h3>
+        <span className="progress-panel-title">Analysis Feed</span>
+      </div>
       <div className="progress-log" ref={logRef}>
         {progress.map((entry, i) => (
           <div key={i} className={entry.type}>
-            [{entry.time}] {entry.text}
+            <span className="progress-time">[{entry.time}]</span>
+            {entry.text}
           </div>
         ))}
       </div>
