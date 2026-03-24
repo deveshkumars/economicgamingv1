@@ -26,6 +26,10 @@ export default function QueryBox({ query, isRunning, health, onQueryChange, onAn
 
   return (
     <div className="query-box">
+      <div className="query-label">
+        <span className="query-label-text">Intelligence Query</span>
+        <span className="query-label-prompt">// press Enter to execute</span>
+      </div>
       <textarea
         id="query"
         rows={2}
@@ -52,6 +56,7 @@ export default function QueryBox({ query, isRunning, health, onQueryChange, onAn
         )}
       </div>
       <div className="examples">
+        <span className="examples-label">Scenarios:</span>
         {EXAMPLES.map((ex) => (
           <span key={ex} className="example-chip" onClick={() => onQueryChange(ex)}>
             {ex}

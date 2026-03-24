@@ -11,10 +11,10 @@ interface Props {
   onTabChange: (tab: TabId) => void
 }
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'report', label: 'Report' },
-  { id: 'graph', label: 'Entity Graph' },
-  { id: 'json', label: 'Raw JSON' },
+const TABS: { id: TabId; label: string; prefix: string }[] = [
+  { id: 'report', label: 'Report',       prefix: '▤' },
+  { id: 'graph',  label: 'Entity Graph', prefix: '◈' },
+  { id: 'json',   label: 'Raw Data',     prefix: '{}' },
 ]
 
 export default function ResultsTabs({ activeTab, markdown, result, graphData, onTabChange }: Props) {
@@ -27,6 +27,7 @@ export default function ResultsTabs({ activeTab, markdown, result, graphData, on
             className={`tab ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => onTabChange(tab.id)}
           >
+            <span className="tab-prefix">{tab.prefix}</span>
             {tab.label}
           </div>
         ))}
