@@ -323,6 +323,8 @@ body {
   border-color: var(--accent);
   color: #040810;
   animation: btn-pulse 3s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-primary:hover {
@@ -723,4 +725,29 @@ body {
 @keyframes btn-pulse {
   0%, 100% { box-shadow: 0 0 8px rgba(0, 212, 255, 0.2); }
   50%       { box-shadow: 0 0 20px rgba(0, 212, 255, 0.45); }
+}
+
+@keyframes ripple-expand {
+  0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(5); opacity: 0; }
+}
+
+@keyframes query-scan {
+  0%   { border-color: var(--border-mid); box-shadow: none; }
+  30%  { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow), 0 0 24px rgba(0, 212, 255, 0.12); }
+  100% { border-color: var(--border-mid); box-shadow: none; }
+}
+
+.btn-ripple {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(4, 8, 16, 0.5);
+  pointer-events: none;
+  animation: ripple-expand 0.7s var(--ease-sharp) forwards;
+}
+
+.query-box--scanning {
+  animation: query-scan 0.85s var(--ease-sharp) forwards;
 }
