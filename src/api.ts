@@ -1,8 +1,23 @@
 import type { HealthResponse, SanctionsImpactResponse, EntityGraphResponse } from './types'
 
+async function parseJson<T>(res: Response): Promise<T> {
+  const text = await res.text()
+  if (!text) throw new Error(`Server returned empty response (HTTP ${res.status})`)
+  try {
+    const data = JSON.parse(text)
+    if (!res.ok) throw new Error(data.detail || data.message || `Request failed (HTTP ${res.status})`)
+    return data as T
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      throw new Error(`Server returned non-JSON response (HTTP ${res.status})`)
+    }
+    throw e
+  }
+}
+
 export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch('/api/health')
-  return res.json()
+  return parseJson<HealthResponse>(res)
 }
 
 export async function fetchSanctionsImpact(ticker: string): Promise<SanctionsImpactResponse> {
@@ -11,9 +26,7 @@ export async function fetchSanctionsImpact(ticker: string): Promise<SanctionsImp
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ticker }),
   })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.detail || 'Request failed')
-  return data
+  return parseJson<SanctionsImpactResponse>(res)
 }
 
 export async function fetchEntityGraph(query: string): Promise<EntityGraphResponse> {
@@ -22,7 +35,5 @@ export async function fetchEntityGraph(query: string): Promise<EntityGraphRespon
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query }),
   })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.detail || 'Graph unavailable')
-  return data
+  return parseJson<EntityGraphResponse>(res)
 }
