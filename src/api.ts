@@ -1,5 +1,10 @@
 import type { HealthResponse, SanctionsImpactResponse, EntityGraphResponse } from './types'
 
+const API_BASE =
+  ((import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+    'https://economic-warfare-osint.onrender.com'
+  ).replace(/\/$/, '')
+
 async function parseJson<T>(res: Response): Promise<T> {
   const text = await res.text()
   if (!text) throw new Error(`Server returned empty response (HTTP ${res.status})`)
@@ -16,12 +21,14 @@ async function parseJson<T>(res: Response): Promise<T> {
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetch('/api/health')
+  const url = `${API_BASE}/api/health`
+  const res = await fetch(url)
   return parseJson<HealthResponse>(res)
 }
 
 export async function fetchSanctionsImpact(ticker: string): Promise<SanctionsImpactResponse> {
-  const res = await fetch('/api/sanctions-impact', {
+  const url = `${API_BASE}/api/sanctions-impact`
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ticker }),
@@ -30,7 +37,8 @@ export async function fetchSanctionsImpact(ticker: string): Promise<SanctionsImp
 }
 
 export async function fetchEntityGraph(query: string): Promise<EntityGraphResponse> {
-  const res = await fetch('/api/entity-graph', {
+  const url = `${API_BASE}/api/entity-graph`
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query }),
