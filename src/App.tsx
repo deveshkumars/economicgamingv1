@@ -1,159 +1,100 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchHealth, getAnalysis, startAnalysis } from './api'
+import { fetchHealth, fetchSanctionsImpact, fetchEntityGraph } from './api'
 import Header from './components/Header'
-import ProgressPanel, { type ProgressEntry } from './components/ProgressPanel'
-import QueryBox from './components/QueryBox'
-import ResultsTabs from './components/ResultsTabs'
-import type { GraphData, HealthResponse, TabId, WsMessage } from './types'
+import QueryBox, { extractTicker } from './components/QueryBox'
+import ProgressPanel from './components/ProgressPanel'
+import ImpactInfoCards from './components/ImpactInfoCards'
+import ImpactChart, { type ImpactChartHandle } from './components/ImpactChart'
+import ProjectionSummary from './components/ProjectionSummary'
+import ComparablesTable from './components/ComparablesTable'
+import EntityGraphSection from './components/EntityGraphSection'
+import type { HealthResponse, SanctionsImpactResponse, EntityGraphResponse, ProgressEntry } from './types'
+import './App.css'
 
 export default function App() {
   const [query, setQuery] = useState('')
-  const [isRunning, setIsRunning] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [progress, setProgress] = useState<ProgressEntry[]>([])
-  const [showProgress, setShowProgress] = useState(false)
-  const [result, setResult] = useState<Record<string, unknown> | null>(null)
-  const [markdown, setMarkdown] = useState<string | null>(null)
-  const [graphData, setGraphData] = useState<GraphData | null>(null)
-  const [showResults, setShowResults] = useState(false)
-  const [activeTab, setActiveTab] = useState<TabId>('report')
+  const [impactData, setImpactData] = useState<SanctionsImpactResponse | null>(null)
+  const [graphData, setGraphData] = useState<EntityGraphResponse | null>(null)
+  const [graphLoading, setGraphLoading] = useState(false)
+  const [hiddenDatasets, setHiddenDatasets] = useState<Set<number>>(new Set())
 
-  const wsRef = useRef<WebSocket | null>(null)
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isRunningRef = useRef(false)
-
-  // Keep ref in sync for use inside closures
-  isRunningRef.current = isRunning
+  const chartRef = useRef<ImpactChartHandle>(null)
 
   useEffect(() => {
     fetchHealth().then(setHealth).catch(() => {})
   }, [])
 
-  function addProgress(text: string, type: ProgressEntry['type'] = 'step') {
+  function addProgress(msg: string, type: ProgressEntry['type'] = 'step') {
     const time = new Date().toLocaleTimeString()
-    setProgress((prev) => [...prev, { text, type, time }])
+    setProgress((prev) => [...prev, { msg, type, time }])
   }
 
-  function showResultsData(data: { result: Record<string, unknown>; markdown: string; graph_data: GraphData }) {
-    setResult(data.result)
-    setMarkdown(data.markdown)
-    setGraphData(data.graph_data)
-    setShowResults(true)
-  }
-
-  function connectWS(analysisId: string) {
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const ws = new WebSocket(`${proto}//${location.host}/ws/analyze/${analysisId}`)
-    wsRef.current = ws
-
-    ws.onmessage = (event) => {
-      const msg: WsMessage = JSON.parse(event.data)
-      if (msg.type === 'progress') {
-        addProgress(msg.message, 'step')
-      } else if (msg.type === 'complete') {
-        addProgress('Analysis complete!', 'done')
-        setIsRunning(false)
-        showResultsData(msg)
-      } else if (msg.type === 'error') {
-        addProgress(`Error: ${msg.error}`, 'error')
-        setIsRunning(false)
-      }
-    }
-
-    ws.onerror = () => {
-      pollAnalysis(analysisId)
-    }
-
-    ws.onclose = () => {
-      if (isRunningRef.current) {
-        pollAnalysis(analysisId)
-      }
-    }
-  }
-
-  function pollAnalysis(analysisId: string) {
-    const poll = async () => {
-      try {
-        const data = await getAnalysis(analysisId)
-
-        // Rebuild progress log from server state
-        setProgress((prev) => {
-          const rebuiltProgress = data.progress.map((msg, idx) => {
-            const existing = prev[idx]
-            const keepExistingTime = existing && existing.text === msg
-            return {
-              text: msg,
-              type: (msg.includes('Error') || msg.includes('failed') ? 'error' : 'step') as ProgressEntry['type'],
-              time: keepExistingTime ? existing.time : new Date().toLocaleTimeString(),
-            }
-          })
-          return rebuiltProgress
-        })
-
-        if (data.status === 'complete' && data.result && data.markdown && data.graph_data) {
-          addProgress('Analysis complete!', 'done')
-          setIsRunning(false)
-          showResultsData({ result: data.result, markdown: data.markdown, graph_data: data.graph_data })
-          return
-        } else if (data.status === 'error') {
-          addProgress(`Error: ${data.error || 'Unknown'}`, 'error')
-          setIsRunning(false)
-          return
-        }
-
-        pollTimerRef.current = setTimeout(poll, 2000)
-      } catch (e) {
-        addProgress(`Polling error: ${(e as Error).message}`, 'error')
-      }
-    }
-    poll()
-  }
-
-  async function handleAnalyze() {
-    const trimmed = query.trim()
-    if (!trimmed) return
-
-    // Reset state
-    setIsRunning(true)
-    setShowProgress(true)
-    setShowResults(false)
-    setProgress([])
-    setResult(null)
-    setMarkdown(null)
+  async function loadEntityGraph(ticker: string) {
+    setGraphLoading(true)
     setGraphData(null)
-    setActiveTab('report')
-
-    // Clear any existing poll timer
-    if (pollTimerRef.current) {
-      clearTimeout(pollTimerRef.current)
+    try {
+      const data = await fetchEntityGraph(ticker)
+      setGraphData(data)
+    } catch {
+      setGraphData({ nodes: [], edges: [], meta: { query: ticker, node_count: 0, edge_count: 0 } })
+    } finally {
+      setGraphLoading(false)
     }
-    if (wsRef.current) {
-      wsRef.current.close()
-    }
+  }
 
-    addProgress('Submitting query...', 'step')
+  async function startAnalysis(tickerOverride?: string) {
+    const raw = query.trim()
+    if (!raw && !tickerOverride) return
+
+    const ticker = tickerOverride || extractTicker(raw)
+    if (!ticker) return
+
+    setLoading(true)
+    setImpactData(null)
+    setGraphData(null)
+    setGraphLoading(false)
+    setProgress([])
+    setHiddenDatasets(new Set())
+
+    addProgress(`Resolving ticker: ${ticker}`)
+    addProgress('Checking sanctions status (OFAC, OpenSanctions, Trade.gov CSL)...')
+    addProgress('Fetching historical comparable data...')
 
     try {
-      const data = await startAnalysis(trimmed)
-      addProgress(`Analysis started (ID: ${data.analysis_id})`, 'step')
-      connectWS(data.analysis_id)
+      const data = await fetchSanctionsImpact(ticker)
+      addProgress(`Found ${data.metadata.comparable_count} comparable sanctions cases`)
+      addProgress('Computing projection with confidence interval...')
+      addProgress('Done!', 'done')
+      setImpactData(data)
+      loadEntityGraph(ticker)
     } catch (e) {
-      addProgress(`Connection error: ${(e as Error).message}`, 'error')
-      setIsRunning(false)
+      addProgress(`Error: ${(e as Error).message}`, 'error')
+    } finally {
+      setLoading(false)
     }
   }
 
-  function handleClear() {
+  function clearAll() {
     setQuery('')
-    setShowProgress(false)
-    setShowResults(false)
+    setLoading(false)
     setProgress([])
-    setResult(null)
-    setMarkdown(null)
+    setImpactData(null)
     setGraphData(null)
-    setIsRunning(false)
-    if (wsRef.current) wsRef.current.close()
-    if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
+    setGraphLoading(false)
+    setHiddenDatasets(new Set())
+  }
+
+  function handleToggle(idx: number) {
+    chartRef.current?.toggleDataset(idx)
+    setHiddenDatasets((prev) => {
+      const next = new Set(prev)
+      if (next.has(idx)) next.delete(idx)
+      else next.add(idx)
+      return next
+    })
   }
 
   return (
@@ -162,24 +103,51 @@ export default function App() {
       <div className="main">
         <QueryBox
           query={query}
-          isRunning={isRunning}
+          loading={loading}
           health={health}
           onQueryChange={setQuery}
-          onAnalyze={handleAnalyze}
-          onClear={handleClear}
+          onAnalyze={startAnalysis}
+          onClear={clearAll}
         />
-        {showProgress && (
-          <ProgressPanel visible={showProgress} isRunning={isRunning} progress={progress} />
+
+        {progress.length > 0 && (
+          <ProgressPanel entries={progress} loading={loading} />
         )}
-        {showResults && markdown && result && (
-          <ResultsTabs
-            activeTab={activeTab}
-            markdown={markdown}
-            result={result}
-            graphData={graphData}
-            onTabChange={setActiveTab}
-          />
+
+        {impactData && (
+          <div id="resultsPanel">
+            <ImpactInfoCards target={impactData.target} />
+
+            <div className="impact-chart-container">
+              <ImpactChart ref={chartRef} data={impactData} />
+            </div>
+
+            <div className="info-card" style={{ marginBottom: '24px' }}>
+              <h3>Projected Impact Summary</h3>
+              <ProjectionSummary summary={impactData.projection.summary} />
+            </div>
+
+            <div className="info-card">
+              <h3>
+                Historical Comparable Cases{' '}
+                <span style={{ fontSize: '11px', color: '#484f58', textTransform: 'none', letterSpacing: 0 }}>
+                  (click to toggle on chart)
+                </span>
+              </h3>
+              <ComparablesTable
+                comparables={impactData.comparables}
+                hidden={hiddenDatasets}
+                onToggle={handleToggle}
+              />
+            </div>
+
+            <div className="source-note">
+              Data sources: Yahoo Finance, OFAC SDN, Trade.gov Consolidated Screening List, OpenSanctions
+            </div>
+          </div>
         )}
+
+        <EntityGraphSection graphData={graphData} graphLoading={graphLoading} />
       </div>
     </>
   )

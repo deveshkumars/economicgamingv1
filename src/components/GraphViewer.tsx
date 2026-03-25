@@ -1,100 +1,65 @@
 import { useEffect, useRef } from 'react'
-import { Network } from 'vis-network/standalone'
-import type { GraphData } from '../types'
+import { Network, DataSet } from 'vis-network/standalone'
+import type { GraphNode, GraphEdge } from '../types'
 
 interface Props {
-  graphData: GraphData
+  nodes: GraphNode[]
+  edges: GraphEdge[]
+  onStabilized?: () => void
 }
 
-export default function GraphViewer({ graphData }: Props) {
+export default function GraphViewer({ nodes, edges, onStabilized }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!containerRef.current || !graphData.nodes.length) return
+    if (!containerRef.current || !nodes.length) return
 
     const network = new Network(
       containerRef.current,
       {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        nodes: graphData.nodes as any,
+        nodes: new DataSet(nodes as any),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        edges: graphData.edges as any,
+        edges: new DataSet(edges as any),
       },
       {
+        physics: {
+          solver: 'repulsion',
+          repulsion: {
+            nodeDistance: 180,
+            centralGravity: 0.15,
+            springLength: 200,
+            springConstant: 0.04,
+            damping: 0.09,
+          },
+          stabilization: { iterations: 300 },
+        },
         nodes: {
           shape: 'dot',
-          size: 14,
-          color: {
-            background: '#0c1e3d',
-            border: '#00d4ff',
-            highlight: { background: '#00d4ff', border: '#33ddff' },
-            hover:     { background: '#112a4d', border: '#33ddff' },
-          },
-          font: {
-            color: '#e8f0fe',
-            size: 12,
-            face: "'JetBrains Mono', 'Fira Code', monospace",
-            strokeWidth: 2,
-            strokeColor: '#040810',
-            vadjust: 5,
-          },
-          borderWidth: 1.5,
-          borderWidthSelected: 2.5,
-          widthConstraint: { maximum: 160 },
-          shadow: {
-            enabled: true,
-            color: 'rgba(0, 212, 255, 0.25)',
-            size: 12,
-            x: 0,
-            y: 0,
-          },
+          size: 18,
+          font: { color: '#c9d1d9', size: 12, strokeWidth: 3, strokeColor: '#0d1117' },
+          borderWidth: 2,
+          color: { border: '#30363d', highlight: { border: '#58a6ff' }, hover: { border: '#58a6ff' } },
         },
         edges: {
-          color: {
-            color: '#1a2540',
-            highlight: '#00d4ff',
-            hover: '#2e4070',
-            opacity: 0.8,
-          },
-          font: {
-            color: '#4a6080',
-            size: 10,
-            face: "'JetBrains Mono', monospace",
-            strokeWidth: 0,
-            align: 'middle',
-          },
-          width: 1,
-          selectionWidth: 2,
-          smooth: { enabled: true, type: 'curvedCW', roundness: 0.2 },
-          arrows: {
-            to: { enabled: true, scaleFactor: 0.6, type: 'arrow' },
-          },
+          font: { color: '#8b949e', size: 10, align: 'middle', strokeWidth: 2, strokeColor: '#0d1117' },
+          color: { color: '#58a6ff', highlight: '#ffffff', opacity: 0.6 },
+          width: 2,
+          smooth: { enabled: true, type: 'continuous', roundness: 0.5 },
+          arrows: { to: { enabled: true, scaleFactor: 0.5 } },
         },
-        physics: {
-          solver: 'forceAtlas2Based',
-          forceAtlas2Based: {
-            gravitationalConstant: -90,
-            centralGravity: 0.008,
-            springLength: 180,
-            springConstant: 0.05,
-            damping: 0.7,
-          },
-          minVelocity: 0.5,
-          stabilization: { iterations: 250, fit: true },
-        },
-        interaction: {
-          hover: true,
-          tooltipDelay: 80,
-          zoomView: true,
-          navigationButtons: false,
-          keyboard: { enabled: true },
-        },
-        layout: { improvedLayout: true },
+        interaction: { hover: true, tooltipDelay: 150 },
+        layout: { randomSeed: 42 },
       }
     )
 
-    return () => network.destroy()
-  }, [graphData])
+    network.once('stabilized', () => {
+      network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } })
+      onStabilized?.()
+    })
 
-  return <div id="graph-container" ref={containerRef} />
+    return () => network.destroy()
+  }, [nodes, edges, onStabilized])
+
+  return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }

@@ -1,63 +1,121 @@
+// --- Health ---
+
 export interface HealthResponse {
-  status: 'ok' | 'misconfigured'
-  issues: string[]
-  model: string
-  tools_available: boolean
+  status: 'ok' | 'misconfigured';
+  issues: string[];
+  model: string;
+  tools_available: boolean;
 }
 
-export interface AnalyzeResponse {
-  analysis_id: string
-  status: string
+// --- Sanctions Impact ---
+
+export interface CslMatch {
+  name: string;
+  source: string;
+  programs: string[];
+  start_date: string | null;
 }
+
+export interface SanctionsStatus {
+  is_sanctioned: boolean;
+  lists: string[];
+  programs: string[];
+  csl_matches: CslMatch[];
+}
+
+export interface TargetInfo {
+  ticker: string;
+  name: string;
+  sector: string | null;
+  industry: string | null;
+  country: string | null;
+  market_cap: number | null;
+  current_price: number;
+  change_pct: number;
+  sanctions_status: SanctionsStatus;
+}
+
+export interface CurvePoint {
+  day: number;
+  pct: number;
+}
+
+export interface Comparable {
+  name: string;
+  ticker: string;
+  sanction_date: string;
+  description: string;
+  sector: string;
+  color: string;
+  curve: CurvePoint[];
+}
+
+export interface ProjectionPoint {
+  day: number;
+  pct: number;
+  price: number;
+}
+
+export interface ProjectionSummaryData {
+  day_30_expected?: number;
+  day_30_range?: [number, number];
+  day_60_expected?: number;
+  day_60_range?: [number, number];
+  day_90_expected?: number;
+  day_90_range?: [number, number];
+  max_drawdown_expected?: number;
+}
+
+export interface Projection {
+  mean: ProjectionPoint[];
+  upper: ProjectionPoint[];
+  lower: ProjectionPoint[];
+  summary: ProjectionSummaryData;
+}
+
+export interface SanctionsImpactResponse {
+  target: TargetInfo;
+  comparables: Comparable[];
+  projection: Projection;
+  metadata: {
+    comparable_count: number;
+    time_window_days: [number, number];
+    generated_at: string;
+  };
+}
+
+// --- Entity Graph ---
 
 export interface GraphNode {
-  id: string
-  label: string
-  group: string
-  title: string
-  color: string
+  id: string;
+  label: string;
+  title: string;
+  group: string;
+  color: string;
 }
 
 export interface GraphEdge {
-  from: string
-  to: string
-  label: string
-  arrows: string
-  dashes: boolean
+  from: string;
+  to: string;
+  label: string;
+  arrows: string;
+  dashes: boolean;
 }
 
-export interface GraphData {
-  nodes: GraphNode[]
-  edges: GraphEdge[]
+export interface EntityGraphResponse {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  meta: {
+    query: string;
+    node_count: number;
+    edge_count: number;
+  };
 }
 
-export interface AnalysisStatus {
-  analysis_id: string
-  status: string
-  progress: string[]
-  result: Record<string, unknown> | null
-  markdown: string | null
-  graph_data: GraphData | null
-  error: string | null
+// --- Progress ---
+
+export interface ProgressEntry {
+  msg: string;
+  type: 'step' | 'error' | 'done';
+  time: string;
 }
-
-export type TabId = 'report' | 'graph' | 'json'
-
-export interface WsProgressMessage {
-  type: 'progress'
-  message: string
-}
-
-export interface WsCompleteMessage {
-  type: 'complete'
-  result: Record<string, unknown>
-  markdown: string
-  graph_data: GraphData
-}
-
-export interface WsErrorMessage {
-  type: 'error'
-  error: string
-}
-
-export type WsMessage = WsProgressMessage | WsCompleteMessage | WsErrorMessage

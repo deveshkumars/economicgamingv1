@@ -5,11 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'https://economic-warfare-osint.onrender.com',
-      '/ws': {
-        target: 'wss://economic-warfare-osint.onrender.com',
-        ws: true,
-      },
+      '/api': 'http://localhost:8000',
     },
   },
 })
