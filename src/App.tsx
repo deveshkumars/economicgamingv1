@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchHealth, fetchSanctionsImpact, fetchEntityGraph } from './api'
+import { fetchHealth, fetchSanctionsImpact/*, fetchEntityGraph*/ } from './api'
 import Header from './components/Header'
 import QueryBox, { extractTicker } from './components/QueryBox'
 import ProgressPanel from './components/ProgressPanel'
@@ -7,8 +7,8 @@ import ImpactInfoCards from './components/ImpactInfoCards'
 import ImpactChart, { type ImpactChartHandle } from './components/ImpactChart'
 import ProjectionSummary from './components/ProjectionSummary'
 import ComparablesTable from './components/ComparablesTable'
-import EntityGraphSection from './components/EntityGraphSection'
-import type { HealthResponse, SanctionsImpactResponse, EntityGraphResponse, ProgressEntry } from './types'
+// import EntityGraphSection from './components/EntityGraphSection'
+import type { HealthResponse, SanctionsImpactResponse, /*EntityGraphResponse,*/ ProgressEntry } from './types'
 import './App.css'
 
 export default function App() {
@@ -17,8 +17,8 @@ export default function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [progress, setProgress] = useState<ProgressEntry[]>([])
   const [impactData, setImpactData] = useState<SanctionsImpactResponse | null>(null)
-  const [graphData, setGraphData] = useState<EntityGraphResponse | null>(null)
-  const [graphLoading, setGraphLoading] = useState(false)
+  // const [graphData, setGraphData] = useState<EntityGraphResponse | null>(null)
+  // const [graphLoading, setGraphLoading] = useState(false)
   const [hiddenDatasets, setHiddenDatasets] = useState<Set<number>>(new Set())
 
   const chartRef = useRef<ImpactChartHandle>(null)
@@ -32,18 +32,18 @@ export default function App() {
     setProgress((prev) => [...prev, { msg, type, time }])
   }
 
-  async function loadEntityGraph(ticker: string) {
-    setGraphLoading(true)
-    setGraphData(null)
-    try {
-      const data = await fetchEntityGraph(ticker)
-      setGraphData(data)
-    } catch {
-      setGraphData({ nodes: [], edges: [], meta: { query: ticker, node_count: 0, edge_count: 0 } })
-    } finally {
-      setGraphLoading(false)
-    }
-  }
+  // async function loadEntityGraph(ticker: string) {
+  //   setGraphLoading(true)
+  //   setGraphData(null)
+  //   try {
+  //     const data = await fetchEntityGraph(ticker)
+  //     setGraphData(data)
+  //   } catch {
+  //     setGraphData({ nodes: [], edges: [], meta: { query: ticker, node_count: 0, edge_count: 0 } })
+  //   } finally {
+  //     setGraphLoading(false)
+  //   }
+  // }
 
   async function startAnalysis(tickerOverride?: string) {
     const raw = query.trim()
@@ -54,8 +54,8 @@ export default function App() {
 
     setLoading(true)
     setImpactData(null)
-    setGraphData(null)
-    setGraphLoading(false)
+    // setGraphData(null)
+    // setGraphLoading(false)
     setProgress([])
     setHiddenDatasets(new Set())
 
@@ -69,7 +69,7 @@ export default function App() {
       addProgress('Computing projection with confidence interval...')
       addProgress('Done!', 'done')
       setImpactData(data)
-      loadEntityGraph(ticker)
+      // loadEntityGraph(ticker)
     } catch (e) {
       addProgress(`Error: ${(e as Error).message}`, 'error')
     } finally {
@@ -82,8 +82,8 @@ export default function App() {
     setLoading(false)
     setProgress([])
     setImpactData(null)
-    setGraphData(null)
-    setGraphLoading(false)
+    // setGraphData(null)
+    // setGraphLoading(false)
     setHiddenDatasets(new Set())
   }
 
@@ -147,7 +147,7 @@ export default function App() {
           </div>
         )}
 
-        <EntityGraphSection graphData={graphData} graphLoading={graphLoading} />
+        {/* <EntityGraphSection graphData={graphData} graphLoading={graphLoading} /> */}
       </div>
     </>
   )
