@@ -2,7 +2,7 @@ import type { HealthResponse, SanctionsImpactResponse, EntityGraphResponse } fro
 
 const API_BASE =
   ((import.meta.env.VITE_API_BASE_URL as string | undefined) ||
-    'https://economic-warfare-osint.onrender.com'
+    'http://localhost:8000'
   ).replace(/\/$/, '')
 
 async function parseJson<T>(res: Response): Promise<T> {
