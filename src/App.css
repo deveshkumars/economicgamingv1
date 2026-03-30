@@ -124,3 +124,9 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .debug-num  { color: #f2cc60; }
 .debug-bool { color: #ff7b72; }
 .debug-null { color: #8b949e; }
+
+/* Vessel map time-range toggles */
+.map-range-btn { background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit; transition: border-color 0.15s, color 0.15s; }
+.map-range-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+.map-range-btn.active { border-color: #58a6ff; color: #58a6ff; }
+

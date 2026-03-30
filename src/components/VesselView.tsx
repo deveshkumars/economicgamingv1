@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import type { VesselTrackResponse } from '../types'
 import NarrativeCard from './NarrativeCard'
+import VesselMap from './VesselMap'
 
 interface Props {
   data: VesselTrackResponse
@@ -14,6 +16,7 @@ function vesselField(vessel: Record<string, unknown>, key: string): string {
 export default function VesselView({ data }: Props) {
   const { vessel, is_sanctioned, sanctions_matches, route_history } = data
   const vesselName = vesselField(vessel, 'name')
+  const [timeRange, setTimeRange] = useState<'24h' | '1w' | '2w'>('2w')
 
   return (
     <div id="resultsPanel">
@@ -79,6 +82,25 @@ export default function VesselView({ data }: Props) {
             <div className="empty-note">No live AIS position data available. Add DATALASTIC_API_KEY to enable live tracking.</div>
           )}
         </div>
+      </div>
+
+      {/* AIS Route Map */}
+      <div className="info-card view-section">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <h3 style={{ margin: 0 }}>AIS Route Map</h3>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {(['24h', '1w', '2w'] as const).map((r) => (
+              <button
+                key={r}
+                className={`map-range-btn${timeRange === r ? ' active' : ''}`}
+                onClick={() => setTimeRange(r)}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+        <VesselMap routeHistory={route_history} timeRange={timeRange} />
       </div>
 
       {/* OFAC matches — only show if sanctioned */}
