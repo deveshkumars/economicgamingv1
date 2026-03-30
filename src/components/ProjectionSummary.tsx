@@ -4,43 +4,61 @@ interface Props {
   summary: ProjectionSummaryData
 }
 
-const KEYS = [
-  { label: '30-Day', expected: 'day_30_expected', range: 'day_30_range' },
-  { label: '60-Day', expected: 'day_60_expected', range: 'day_60_range' },
-  { label: '90-Day', expected: 'day_90_expected', range: 'day_90_range' },
+const POST_KEYS = [
+  { label: '30-Day Post', expected: 'day_30_post', range: 'day_30_range' },
+  { label: '60-Day Post', expected: 'day_60_post', range: 'day_60_range' },
+  { label: '90-Day Post', expected: 'day_90_post', range: 'day_90_range' },
 ] as const
+
+function SummaryCard({ label, val, range, note }: {
+  label: string
+  val: number | undefined
+  range?: [number, number]
+  note?: string
+}) {
+  if (val === undefined) {
+    return (
+      <div className="proj-card">
+        <div className="proj-label">{label}</div>
+        <div className="proj-value" style={{ color: '#8b949e' }}>N/A</div>
+      </div>
+    )
+  }
+  const cls = val < 0 ? 'negative' : 'positive'
+  const sign = val >= 0 ? '+' : ''
+  return (
+    <div className="proj-card">
+      <div className="proj-label">{label}</div>
+      <div className={`proj-value ${cls}`}>{sign}{val.toFixed(1)}%</div>
+      {range && (
+        <div className="proj-range">{range[0].toFixed(1)}% to {range[1].toFixed(1)}%</div>
+      )}
+      {note && <div className="proj-note">{note}</div>}
+    </div>
+  )
+}
 
 export default function ProjectionSummary({ summary }: Props) {
   return (
     <div className="projection-summary">
-      {KEYS.map(({ label, expected, range }) => {
-        const val = summary[expected]
-        const rng = summary[range]
-
-        if (val === undefined) {
-          return (
-            <div key={label} className="proj-card">
-              <div className="proj-label">{label} Projection</div>
-              <div className="proj-value" style={{ color: '#8b949e' }}>N/A</div>
-            </div>
-          )
-        }
-
-        const cls = val < 0 ? 'negative' : 'positive'
-        const sign = val >= 0 ? '+' : ''
-
-        return (
-          <div key={label} className="proj-card">
-            <div className="proj-label">{label} Projection</div>
-            <div className={`proj-value ${cls}`}>{sign}{val.toFixed(1)}%</div>
-            {rng && (
-              <div className="proj-range">
-                {rng[0].toFixed(1)}% to {rng[1].toFixed(1)}%
-              </div>
-            )}
-          </div>
-        )
-      })}
+      <SummaryCard
+        label="Pre-Event Decline"
+        val={summary.pre_event_decline}
+        note="Already priced in before announcement"
+      />
+      {POST_KEYS.map(({ label, expected, range }) => (
+        <SummaryCard
+          key={label}
+          label={label}
+          val={summary[expected]}
+          range={summary[range]}
+        />
+      ))}
+      <SummaryCard
+        label="Peak-to-Trough"
+        val={summary.max_drawdown}
+        note="Worst point across full window"
+      />
     </div>
   )
 }

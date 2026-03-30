@@ -8,6 +8,7 @@ const LEGEND = [
   { label: 'Sanctions', color: '#F85149' },
   { label: 'Vessel', color: '#2E8B57' },
   { label: 'Sector', color: '#3FB950' },
+  { label: 'Theme/Offshore', color: '#F0883E' },
 ]
 
 interface Props {

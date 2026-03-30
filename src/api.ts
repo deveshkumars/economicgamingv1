@@ -1,4 +1,14 @@
-import type { HealthResponse, SanctionsImpactResponse, EntityGraphResponse } from './types'
+import type {
+  HealthResponse,
+  SanctionsImpactResponse,
+  EntityGraphResponse,
+  EntityResolutionResponse,
+  PersonProfileResponse,
+  SectorAnalysisResponse,
+  VesselTrackResponse,
+  OrchestratorStatusResponse,
+  StartAnalysisResponse,
+} from './types'
 
 const API_BASE =
   ((import.meta.env.VITE_API_BASE_URL as string | undefined) ||
@@ -44,4 +54,60 @@ export async function fetchEntityGraph(query: string): Promise<EntityGraphRespon
     body: JSON.stringify({ query }),
   })
   return parseJson<EntityGraphResponse>(res)
+}
+
+export async function resolveEntity(query: string): Promise<EntityResolutionResponse> {
+  const url = `${API_BASE}/api/resolve-entity`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  })
+  return parseJson<EntityResolutionResponse>(res)
+}
+
+export async function fetchPersonProfile(name: string): Promise<PersonProfileResponse> {
+  const url = `${API_BASE}/api/person-profile`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+  return parseJson<PersonProfileResponse>(res)
+}
+
+export async function fetchSectorAnalysis(sector: string): Promise<SectorAnalysisResponse> {
+  const url = `${API_BASE}/api/sector-analysis`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sector }),
+  })
+  return parseJson<SectorAnalysisResponse>(res)
+}
+
+export async function startOrchestratorAnalysis(query: string): Promise<StartAnalysisResponse> {
+  const url = `${API_BASE}/api/analyze`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  })
+  return parseJson<StartAnalysisResponse>(res)
+}
+
+export async function pollAnalysisStatus(analysisId: string): Promise<OrchestratorStatusResponse> {
+  const url = `${API_BASE}/api/analyze/${analysisId}`
+  const res = await fetch(url)
+  return parseJson<OrchestratorStatusResponse>(res)
+}
+
+export async function fetchVesselTrack(query: string): Promise<VesselTrackResponse> {
+  const url = `${API_BASE}/api/vessel-track`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  })
+  return parseJson<VesselTrackResponse>(res)
 }
