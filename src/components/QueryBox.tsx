@@ -39,12 +39,12 @@ export function extractTicker(input: string): string {
 }
 
 const EXAMPLES = [
-  { label: 'SMCI sanction impact', query: 'SMCI' },
-  { label: 'Viktor Vekselberg profile', query: 'Viktor Vekselberg' },
-  { label: 'Aircraft MRO sector', query: 'Aircraft MRO' },
-  { label: 'Vessel: Lana', query: 'Lana' },
-  { label: 'What if we sanction Huawei?', query: 'What if we sanction Huawei?' },
-  { label: 'COSCO and military port access', query: 'What is the relationship between COSCO and Chinese military port access?' },
+  { label: 'Sanction Alibaba (BABA)', query: 'BABA' },
+  { label: 'Sanction SMIC (0981.HK)', query: '0981.HK' },
+  { label: 'What if we sanction TSMC? (TSM)', query: 'TSM' },
+  { label: 'Sanction Baidu (BIDU)', query: 'BIDU' },
+  { label: 'ZTE Corp (0763.HK)', query: '0763.HK' },
+  { label: 'Intel chip restrictions (INTC)', query: 'INTC' },
 ]
 
 interface Props {
@@ -113,7 +113,7 @@ export default function QueryBox({ query, loading, health, onQueryChange, onAnal
           <span
             key={ex.query}
             className="example-chip"
-            onClick={() => { onQueryChange(ex.query); onAnalyze(ex.query) }}
+            onClick={() => onQueryChange(ex.label)}
           >
             {ex.label}
           </span>

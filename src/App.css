@@ -118,6 +118,17 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .source-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .source-chip { font-size: 11px; color: #484f58; padding: 2px 8px; border: 1px solid #21262d; border-radius: 12px; }
 
+/* Vessel view */
+.vessel-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 900px) { .vessel-stat-grid { grid-template-columns: 1fr 1fr; } }
+.vessel-stat { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px; text-align: center; }
+.vessel-stat .v-label { font-size: 10px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+.vessel-stat .v-value { font-size: 18px; font-weight: 600; color: #e6edf3; margin-top: 4px; }
+.map-range-toggles { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.map-range-btn { background: #21262d; color: #8b949e; border: 1px solid #30363d; border-radius: 6px; padding: 6px 16px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.map-range-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+.map-range-btn.active { background: rgba(88,166,255,0.15); color: #58a6ff; border-color: #58a6ff; }
+
 /* Debug panel syntax highlighting */
 .debug-key  { color: #79c0ff; }
 .debug-str  { color: #a5d6ff; }
