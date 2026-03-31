@@ -38,57 +38,15 @@ import './App.css'
 
 type ViewMode = 'company' | 'person' | 'sector' | 'vessel' | 'orchestrator'
 
-// Client-side sector keywords — avoids a round-trip to /api/resolve-entity
-const SECTOR_KEYWORDS = [
-  'semiconductor', 'chip', 'chips', 'semis', 'semiconductors',
-  'energy', 'oil', 'gas', 'oil and gas',
-  'shipping', 'maritime',
-  'mro', 'aircraft mro', 'aviation mro', 'aviation maintenance', 'aircraft repair',
-  'defense', 'defence', 'aerospace', 'defense aerospace', 'defense primes',
-  'critical minerals', 'rare earth', 'rare earths', 'lithium', 'cobalt',
-  'port', 'ports', 'logistics', 'port logistics',
-  'financial', 'banking', 'finance', 'correspondent banking',
-  'surveillance', 'dual use',
-  'satellite', 'space', 'commercial space',
-  'telecom', 'telecommunications',
-  'pharma', 'pharmaceutical',
-]
-
-// Natural language question patterns that should go straight to the orchestrator.
-// These are compound/analytical questions — not simple entity lookups.
-const ORCHESTRATOR_PATTERNS = [
-  /^what (if|happens|would|is the impact|is the relationship)/i,
-  /^how (would|does|has|will)/i,
-  /^(analyze|analyse) (the|impact|relationship)/i,
-  /\bif (we|the us|the eu|china|russia)\b/i,
-  /relationship between/i,
-  /\bimpact (of|on)\b/i,
-  /\bexposure (of|to)\b/i,
-  /\bsanction(s)? (the|their|its)\b/i,
-  /\bsupply chain\b/i,
-  /\bpension fund/i,
-  /\bbeneficial owner/i,
-  /\bmap (the|ownership)/i,
-  /\bwhich .*(fund|bank|company|firm)/i,
-]
 
 function classifyClient(query: string): ViewMode | null {
   const raw = query.trim()
   const digits = raw.replace(/[\s-]/g, '')
 
-  // Vessel: MMSI = 9 digits, IMO = 7 digits or "IMO" prefix
+  // Only unambiguous numeric vessel identifiers are safe to classify client-side.
+  // Everything else goes to /api/resolve-entity so Claude decides.
   if (/^\d{9}$/.test(digits)) return 'vessel'
   if (/^\d{7}$/.test(digits) || /^imo\s*\d/i.test(raw)) return 'vessel'
-
-  // Natural language questions → orchestrator (before sector check)
-  if (ORCHESTRATOR_PATTERNS.some((p) => p.test(raw))) return 'orchestrator'
-
-  // Sector: exact or contained keyword match
-  const lower = raw.toLowerCase()
-  if (SECTOR_KEYWORDS.some((kw) => lower === kw)) return 'sector'
-  if (SECTOR_KEYWORDS.some((kw) =>
-    lower.startsWith(kw + ' ') || lower.endsWith(' ' + kw) || lower.includes(' ' + kw + ' ')
-  )) return 'sector'
 
   return null
 }
@@ -184,6 +142,12 @@ export default function App() {
       } catch {
         detectedMode = 'company'
       }
+    }
+
+    if (detectedMode === 'orchestrator') {
+      setLoading(false)
+      await runOrchestratorAnalysis(raw)
+      return
     }
 
     setMode(detectedMode)
