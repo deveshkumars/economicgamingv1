@@ -41,6 +41,15 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .status-badge.ok { background: #238636; color: #fff; }
 .status-badge.error { background: #da3633; color: #fff; }
 
+/* Entity type badge (company/person/sector/vessel) */
+.entity-type-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+  border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.6px; }
+.entity-type-badge.company  { background: rgba(74,144,217,0.15); color: #4A90D9; border: 1px solid rgba(74,144,217,0.3); }
+.entity-type-badge.person   { background: rgba(123,104,238,0.15); color: #7B68EE; border: 1px solid rgba(123,104,238,0.3); }
+.entity-type-badge.vessel   { background: rgba(46,139,87,0.15); color: #2E8B57; border: 1px solid rgba(46,139,87,0.3); }
+.entity-type-badge.sector   { background: rgba(63,185,80,0.15); color: #3FB950; border: 1px solid rgba(63,185,80,0.3); }
+
 /* Impact Projector styles */
 .impact-chart-container { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
 .impact-chart-container canvas { width: 100% !important; height: 450px !important; }

@@ -24,6 +24,7 @@ import VesselView from './components/VesselView'
 import OrchestratorView from './components/OrchestratorView'
 import NarrativeCard from './components/NarrativeCard'
 import DebugPanel from './components/DebugPanel'
+import type { EntityType } from './components/EntityTypeBadge'
 import type {
   HealthResponse,
   SanctionsImpactResponse,
@@ -51,7 +52,6 @@ const SECTOR_KEYWORDS = [
   'surveillance', 'dual use',
   'satellite', 'space', 'commercial space',
   'telecom', 'telecommunications',
-  'pharma', 'pharmaceutical',
 ]
 
 // Natural language question patterns that should go straight to the orchestrator.
@@ -97,6 +97,7 @@ export default function App() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [health, setHealth] = useState<HealthResponse | null>(null)
+  const [entityTypeBadge, setEntityTypeBadge] = useState<{ type: EntityType; text?: string; showIcon?: boolean } | null>(null)
   const [progress, setProgress] = useState<ProgressEntry[]>([])
   const [mode, setMode] = useState<ViewMode | null>(null)
 
@@ -124,6 +125,7 @@ export default function App() {
     setQuery('')
     setLoading(false)
     setProgress([])
+    setEntityTypeBadge(null)
     setMode(null)
     setImpactData(null)
     setPersonData(null)
@@ -153,6 +155,7 @@ export default function App() {
     if (!raw) return
 
     setLoading(true)
+    setEntityTypeBadge(null)
     setImpactData(null)
     setPersonData(null)
     setSectorData(null)
@@ -169,6 +172,7 @@ export default function App() {
 
     // Short-circuit: orchestrator-pattern queries skip the structured endpoints
     if (detectedMode === 'orchestrator') {
+      setEntityTypeBadge({ type: 'sector', text: 'Deep Analysis', showIcon: false })
       setLoading(false)  // runOrchestratorAnalysis manages its own loading state
       await runOrchestratorAnalysis(raw)
       return
@@ -187,6 +191,9 @@ export default function App() {
     }
 
     setMode(detectedMode)
+    if (detectedMode && detectedMode !== 'orchestrator') {
+      setEntityTypeBadge({ type: detectedMode as EntityType })
+    }
 
     if (detectedMode === 'company') {
       await runCompanyAnalysis(raw)
@@ -363,6 +370,7 @@ export default function App() {
           query={query}
           loading={loading}
           health={health}
+          entityTypeBadge={entityTypeBadge}
           onQueryChange={setQuery}
           onAnalyze={startAnalysis}
           onOrchestrate={(q) => runOrchestratorAnalysis(q)}

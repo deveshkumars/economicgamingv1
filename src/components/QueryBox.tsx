@@ -1,4 +1,5 @@
 import type { HealthResponse } from '../types'
+import EntityTypeBadge, { type EntityType } from './EntityTypeBadge'
 
 const KNOWN_MAP: Record<string, string> = {
   'alibaba': 'BABA', 'baba': 'BABA',
@@ -51,6 +52,7 @@ interface Props {
   query: string
   loading: boolean
   health: HealthResponse | null
+  entityTypeBadge: { type: EntityType; text?: string; showIcon?: boolean } | null
   onQueryChange: (q: string) => void
   onAnalyze: (queryOverride?: string) => void
   /** Runs full orchestrator; receives current box text so clicks always use what you see. */
@@ -58,7 +60,7 @@ interface Props {
   onClear: () => void
 }
 
-export default function QueryBox({ query, loading, health, onQueryChange, onAnalyze, onOrchestrate, onClear }: Props) {
+export default function QueryBox({ query, loading, health, entityTypeBadge, onQueryChange, onAnalyze, onOrchestrate, onClear }: Props) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault()
@@ -102,6 +104,13 @@ export default function QueryBox({ query, loading, health, onQueryChange, onAnal
         <button type="button" className="btn btn-secondary" onClick={onClear}>
           Clear
         </button>
+        {entityTypeBadge && (
+          <EntityTypeBadge
+            type={entityTypeBadge.type}
+            text={entityTypeBadge.text}
+            showIcon={entityTypeBadge.showIcon}
+          />
+        )}
         {health && (
           health.status === 'ok'
             ? <span className="status-badge ok">API Connected</span>
