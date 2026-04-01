@@ -73,6 +73,8 @@ export interface Projection {
   upper: ProjectionPoint[];
   lower: ProjectionPoint[];
   summary: ProjectionSummaryData;
+  coherence_score?: number;
+  coherence_low?: boolean;
 }
 
 export interface SanctionsImpactResponse {
@@ -83,6 +85,7 @@ export interface SanctionsImpactResponse {
     comparable_count: number;
     time_window_days: [number, number];
     generated_at: string;
+    sourcing_method?: 'claude' | 'cache' | 'static_fallback';
   };
   narrative?: string;
 }

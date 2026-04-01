@@ -347,6 +347,28 @@ export default function App() {
               <ImpactChart ref={chartRef} data={impactData} />
             </div>
 
+            {impactData.projection.coherence_low && (
+              <div style={{
+                background: 'rgba(248,193,53,0.1)',
+                border: '1px solid rgba(248,193,53,0.35)',
+                borderRadius: '6px',
+                padding: '10px 14px',
+                marginBottom: '16px',
+                fontSize: '12px',
+                color: '#e3b341',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px',
+              }}>
+                <span style={{ flexShrink: 0, fontWeight: 700 }}>Low Coherence</span>
+                <span>
+                  Comparable cases are split on direction (agreement:{' '}
+                  {((impactData.projection.coherence_score ?? 0) * 100).toFixed(0)}%). The projected
+                  mean may mask significant divergence — treat confidence bands as indicative only.
+                </span>
+              </div>
+            )}
+
             <div className="info-card" style={{ marginBottom: '24px' }}>
               <h3>Projected Impact Summary</h3>
               <ProjectionSummary summary={impactData.projection.summary} />
@@ -358,6 +380,28 @@ export default function App() {
                 <span style={{ fontSize: '11px', color: '#484f58', textTransform: 'none', letterSpacing: 0 }}>
                   (click to toggle on chart)
                 </span>
+                {impactData.metadata.sourcing_method && (
+                  <span style={{
+                    marginLeft: '10px',
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    padding: '2px 7px',
+                    borderRadius: '4px',
+                    background: impactData.metadata.sourcing_method === 'static_fallback'
+                      ? 'rgba(72,79,88,0.4)'
+                      : 'rgba(63,185,80,0.15)',
+                    color: impactData.metadata.sourcing_method === 'static_fallback'
+                      ? '#8b949e'
+                      : '#3fb950',
+                    border: `1px solid ${impactData.metadata.sourcing_method === 'static_fallback' ? '#30363d' : 'rgba(63,185,80,0.3)'}`,
+                  }}>
+                    {impactData.metadata.sourcing_method === 'claude' ? 'AI-sourced'
+                     : impactData.metadata.sourcing_method === 'cache' ? 'AI-sourced (cached)'
+                     : 'Reference dataset'}
+                  </span>
+                )}
               </h3>
               <ComparablesTable
                 comparables={impactData.comparables}

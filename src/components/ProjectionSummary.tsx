@@ -42,9 +42,9 @@ export default function ProjectionSummary({ summary }: Props) {
   return (
     <div className="projection-summary">
       <SummaryCard
-        label="Pre-Event Decline"
+        label="60-Day Pre-Event"
         val={summary.pre_event_decline}
-        note="Already priced in before announcement"
+        note="Sector-relative performance 60 days before announcement"
       />
       {POST_KEYS.map(({ label, expected, range }) => (
         <SummaryCard
