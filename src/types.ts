@@ -111,7 +111,7 @@ export interface GraphEdge {
 export interface EntityGraphResponse {
   nodes: GraphNode[];
   edges: GraphEdge[];
-  meta: {
+  meta?: {
     query: string;
     node_count: number;
     edge_count: number;
@@ -271,6 +271,30 @@ export interface SectorAnalysisResponse {
 
 // --- Vessel Track ---
 
+export interface VesselDetail {
+  name: string;
+  imo: string;
+  mmsi: string;
+  callsign: string;
+  flag: string;
+  vessel_type: string;
+  length: number | null;
+  width: number | null;
+  deadweight: number;
+  latitude: number;
+  longitude: number;
+  speed: number;
+  course: number;
+  heading: number;
+  status: string;
+  destination: string;
+  eta: string;
+  last_position_epoch: number;
+  source: string;
+  note?: string;
+  owner?: string;
+}
+
 export interface RoutePoint {
   lat: number;
   lon: number;
@@ -284,12 +308,83 @@ export interface SanctionsMatch {
   programs: string[];
 }
 
+export interface OwnershipLink {
+  entity_id: string;
+  name: string;
+  entity_type: string;
+  country: string | null;
+  ownership_percentage: number | null;
+  is_sanctioned: boolean;
+  is_pep: boolean;
+  depth: number;
+  relationship_type: string;
+  parent_entity_id: string | null;
+}
+
+export interface TradeRecord {
+  supplier: string;
+  buyer: string;
+  hs_code: string | null;
+  hs_description: string | null;
+  departure_country: string | null;
+  arrival_country: string | null;
+  date: string | null;
+}
+
+export interface TradeActivity {
+  records: TradeRecord[];
+  top_hs_codes: { code: string; description: string }[];
+  trade_countries: string[];
+  record_count: number;
+}
+
+export interface PortCall {
+  port_name: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  arrival: string;
+  departure: string;
+}
+
+export interface PortStopInferred {
+  latitude: number;
+  longitude: number;
+  arrival_ts: number;
+  departure_ts: number;
+  duration_hours: number;
+  position_count: number;
+}
+
 export interface VesselTrackResponse {
-  vessel: Record<string, unknown>;
+  vessel: VesselDetail;
   is_sanctioned: boolean;
   sanctions_matches: SanctionsMatch[];
   route_history: RoutePoint[];
+  countries_visited: string[];
+  port_calls: PortCall[];
+  port_stops_inferred: PortStopInferred[];
+  ownership_chain: OwnershipLink[];
+  owner_name: string | null;
+  trade_activity: TradeActivity | null;
   graph: { nodes: GraphNode[]; edges: GraphEdge[] };
   narrative?: string;
   sources: string[];
 }
+
+// --- Shared utility types ---
+
+export type EntityType = 'company' | 'person' | 'sector' | 'vessel';
+
+export interface EntityResolution {
+  entity_type: EntityType;
+  entity_name: string;
+  confidence: number;
+  reasoning: string;
+}
+
+export type AnalysisResult =
+  | { type: 'company'; data: SanctionsImpactResponse }
+  | { type: 'person'; data: PersonProfileResponse }
+  | { type: 'vessel'; data: VesselTrackResponse }
+  | { type: 'sector'; data: SectorAnalysisResponse };

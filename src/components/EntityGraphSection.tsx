@@ -44,7 +44,7 @@ export default function EntityGraphSection({ graphData, graphLoading }: Props) {
       </div>
       {graphData && hasNodes && (
         <div className="graph-stats">
-          {graphData.meta.node_count} entities · {graphData.meta.edge_count} relationships
+          {graphData.meta?.node_count ?? graphData.nodes.length} entities · {graphData.meta?.edge_count ?? graphData.edges.length} relationships
         </div>
       )}
     </div>

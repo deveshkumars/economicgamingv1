@@ -12,9 +12,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .query-box input[type="text"]:focus { outline: none; border-color: #58a6ff; box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
 .query-box input[type="text"]::placeholder { color: #484f58; }
 
-.query-hints { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 8px; font-size: 11px; color: #484f58; }
-.query-hints span { white-space: nowrap; }
-
 .btn-row { display: flex; gap: 12px; margin-top: 12px; align-items: center; }
 .btn { padding: 8px 20px; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; }
 .btn-primary { background: #238636; border-color: #238636; color: #fff; }
@@ -22,7 +19,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-secondary { background: #21262d; color: #c9d1d9; }
 .btn-secondary:hover { background: #30363d; }
-.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .examples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .example-chip { background: #1c2129; border: 1px solid #30363d; border-radius: 16px; padding: 5px 14px; font-size: 12px; color: #8b949e; cursor: pointer; transition: all 0.15s; }
@@ -71,7 +67,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .proj-card .proj-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
 .proj-card .proj-value { font-size: 22px; font-weight: 600; margin-top: 4px; }
 .proj-card .proj-range { font-size: 12px; color: #8b949e; margin-top: 4px; }
-.proj-card .proj-note { font-size: 11px; color: #6e7681; margin-top: 4px; font-style: italic; }
 .proj-value.negative { color: #f85149; }
 .proj-value.positive { color: #3fb950; }
 
@@ -90,48 +85,18 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   transform: translate(-50%, -50%); color: #484f58; font-size: 14px; text-align: center; }
 .graph-stats { font-size: 11px; color: #484f58; text-align: center; padding: 4px 0; }
 
-/* Multi-mode view shared styles */
-.view-section { margin-bottom: 24px; }
-.view-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-@media (max-width: 900px) { .view-grid { grid-template-columns: 1fr; } }
+/* Entity type badge */
+.entity-type-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 16px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.entity-type-badge.company { background: rgba(74, 144, 217, 0.15); color: #58a6ff; border: 1px solid rgba(74, 144, 217, 0.3); }
+.entity-type-badge.person { background: rgba(123, 104, 238, 0.15); color: #a371f7; border: 1px solid rgba(123, 104, 238, 0.3); }
+.entity-type-badge.vessel { background: rgba(46, 139, 87, 0.15); color: #3fb950; border: 1px solid rgba(46, 139, 87, 0.3); }
+.entity-type-badge.sector { background: rgba(240, 136, 62, 0.15); color: #f0883e; border: 1px solid rgba(240, 136, 62, 0.3); }
 
-.sanctions-banner { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; font-weight: 500; }
-.sanctions-banner.sanctioned { background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.3); color: #f85149; }
-.sanctions-banner.clear { background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.3); color: #3fb950; }
+/* Entity report layout */
+.entity-report { display: flex; flex-direction: column; gap: 20px; }
+.entity-report .info-card { margin-bottom: 0; }
 
-.view-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-.view-table th { background: #21262d; color: #8b949e; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; text-align: left; }
-.view-table td { padding: 8px 12px; border-bottom: 1px solid #21262d; font-size: 13px; color: #c9d1d9; }
-.view-table tr:last-child td { border-bottom: none; }
-
-.tone-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
-.tone-badge.positive { background: rgba(63, 185, 80, 0.15); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.3); }
-.tone-badge.negative { background: rgba(248, 81, 73, 0.15); color: #f85149; border: 1px solid rgba(248, 81, 73, 0.3); }
-.tone-badge.neutral { background: rgba(139, 148, 158, 0.15); color: #8b949e; border: 1px solid rgba(139, 148, 158, 0.3); }
-
-.profile-name { font-size: 22px; font-weight: 600; color: #e6edf3; margin-bottom: 6px; }
-.profile-meta { font-size: 13px; color: #8b949e; }
-.profile-meta span { margin-right: 16px; }
-
-.empty-note { font-size: 13px; color: #484f58; padding: 12px 0; font-style: italic; }
-
-.source-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-.source-chip { font-size: 11px; color: #484f58; padding: 2px 8px; border: 1px solid #21262d; border-radius: 12px; }
-
-/* Vessel view */
-.vessel-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-@media (max-width: 900px) { .vessel-stat-grid { grid-template-columns: 1fr 1fr; } }
-.vessel-stat { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px; text-align: center; }
-.vessel-stat .v-label { font-size: 10px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
-.vessel-stat .v-value { font-size: 18px; font-weight: 600; color: #e6edf3; margin-top: 4px; }
-.map-range-toggles { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.map-range-btn { background: #21262d; color: #8b949e; border: 1px solid #30363d; border-radius: 6px; padding: 6px 16px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
-.map-range-btn:hover { border-color: #58a6ff; color: #58a6ff; }
-.map-range-btn.active { background: rgba(88,166,255,0.15); color: #58a6ff; border-color: #58a6ff; }
-
-/* Debug panel syntax highlighting */
-.debug-key  { color: #79c0ff; }
-.debug-str  { color: #a5d6ff; }
-.debug-num  { color: #f2cc60; }
-.debug-bool { color: #ff7b72; }
-.debug-null { color: #8b949e; }
+/* Stat boxes (vessel details, sector stats) */
+.stat-box { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 10px 14px; }
+.stat-box .label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-box .value { font-size: 16px; font-weight: 600; color: #e6edf3; margin-top: 2px; }

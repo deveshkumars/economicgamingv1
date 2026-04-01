@@ -12,21 +12,13 @@ const KNOWN_MAP: Record<string, string> = {
   'nio': 'NIO',
   'asml': 'ASML',
   'intel': 'INTC', 'intc': 'INTC',
-  'micron': 'MU', 'mu': 'MU',
-  // huawei intentionally omitted — private company, no public ticker
-  'tencent holdings': 'TCEHY', 'tcehy': 'TCEHY',
-  'tencent music': 'TME', 'tme': 'TME',
+  'micron': 'MU',
+  'huawei': 'BABA',
+  'tencent': 'TME', 'tme': 'TME',
   'bilibili': 'BILI', 'bili': 'BILI',
   'pdd': 'PDD', 'pinduoduo': 'PDD',
   'kweb': 'KWEB',
   'full truck': 'YMM', 'ymm': 'YMM',
-  'supermicro': 'SMCI', 'smci': 'SMCI',
-  'nvidia': 'NVDA', 'nvda': 'NVDA',
-  'qualcomm': 'QCOM', 'qcom': 'QCOM',
-  'applied materials': 'AMAT', 'amat': 'AMAT',
-  'seagate': 'STX', 'stx': 'STX',
-  'gazprom': 'OGZPY', 'ogzpy': 'OGZPY',
-  'sberbank': 'SBRCY', 'sbrcy': 'SBRCY',
 }
 
 export function extractTicker(input: string): string {
@@ -38,13 +30,22 @@ export function extractTicker(input: string): string {
   return match ? match[1] : input.trim().toUpperCase()
 }
 
-const EXAMPLES = [
-  { label: 'Sanction Alibaba (BABA)', query: 'BABA' },
-  { label: 'Sanction SMIC (0981.HK)', query: '0981.HK' },
-  { label: 'What if we sanction TSMC? (TSM)', query: 'TSM' },
-  { label: 'Sanction Baidu (BIDU)', query: 'BIDU' },
-  { label: 'ZTE Corp (0763.HK)', query: '0763.HK' },
-  { label: 'Intel chip restrictions (INTC)', query: 'INTC' },
+interface Example {
+  label: string
+  ticker?: string  // if set, bypasses entity resolution (company shortcut)
+}
+
+const EXAMPLES: Example[] = [
+  // Companies
+  { label: 'Sanction Alibaba (BABA)', ticker: 'BABA' },
+  { label: 'What if we sanction TSMC?', ticker: 'TSM' },
+  // Persons
+  { label: 'Viktor Vekselberg' },
+  { label: 'Roman Abramovich' },
+  // Vessels
+  { label: 'Track vessel LADY M' },
+  // Sectors
+  { label: 'Semiconductor sector' },
 ]
 
 interface Props {
@@ -52,19 +53,12 @@ interface Props {
   loading: boolean
   health: HealthResponse | null
   onQueryChange: (q: string) => void
-  onAnalyze: (queryOverride?: string) => void
-  /** Runs full orchestrator; receives current box text so clicks always use what you see. */
-  onOrchestrate: (queryText: string) => void
+  onAnalyze: (tickerOverride?: string) => void
   onClear: () => void
 }
 
-export default function QueryBox({ query, loading, health, onQueryChange, onAnalyze, onOrchestrate, onClear }: Props) {
+export default function QueryBox({ query, loading, health, onQueryChange, onAnalyze, onClear }: Props) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault()
-      if (!loading) onOrchestrate(query)
-      return
-    }
     if (e.key === 'Enter') {
       e.preventDefault()
       onAnalyze()
@@ -75,31 +69,16 @@ export default function QueryBox({ query, loading, health, onQueryChange, onAnal
     <div className="query-box">
       <input
         type="text"
-        placeholder="Search any company, person, sector, or vessel..."
+        placeholder="Search for a company, person, vessel, or sector..."
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        aria-label="Search query"
       />
-      <div className="query-hints">
-        <span>Enter — Analyze</span>
-        <span>Ctrl+Enter / ⌘+Enter — Deep Analysis</span>
-      </div>
       <div className="btn-row">
-        <button type="button" className="btn btn-primary" disabled={loading} onClick={() => onAnalyze()}>
+        <button className="btn btn-primary" disabled={loading} onClick={() => onAnalyze()}>
           Analyze
         </button>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={loading}
-          onClick={() => onOrchestrate(query)}
-          title="Full multi-agent pipeline (POST /api/analyze). Shortcut: Ctrl+Enter or ⌘+Enter in the search box."
-          style={{ borderColor: '#58a6ff', color: '#58a6ff' }}
-        >
-          Deep Analysis
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={onClear}>
+        <button className="btn btn-secondary" onClick={onClear}>
           Clear
         </button>
         {health && (
@@ -109,11 +88,14 @@ export default function QueryBox({ query, loading, health, onQueryChange, onAnal
         )}
       </div>
       <div className="examples">
-        {EXAMPLES.map((ex) => (
+        {EXAMPLES.map((ex, i) => (
           <span
-            key={ex.query}
+            key={i}
             className="example-chip"
-            onClick={() => onQueryChange(ex.label)}
+            onClick={() => {
+              onQueryChange(ex.label)
+              onAnalyze(ex.ticker) // undefined for non-company → triggers entity resolution
+            }}
           >
             {ex.label}
           </span>
