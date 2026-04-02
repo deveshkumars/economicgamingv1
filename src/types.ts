@@ -458,14 +458,25 @@ export interface OwnershipLink {
   parent_entity_id: string | null;
 }
 
+export interface SankeyFlow {
+  from: string;
+  to: string;
+  flow: number;
+}
+
 export interface TradeRecord {
   supplier: string;
   buyer: string;
+  supplier_risks: string[];
+  buyer_risks: string[];
   hs_code: string | null;
   hs_description: string | null;
+  commodity_category: string | null;
   departure_country: string | null;
   arrival_country: string | null;
   date: string | null;
+  weight_kg: number | null;
+  value_usd: number | null;
 }
 
 export interface TradeActivity {
@@ -473,6 +484,7 @@ export interface TradeActivity {
   top_hs_codes: { code: string; description: string }[];
   trade_countries: string[];
   record_count: number;
+  sankey_flows: SankeyFlow[];
 }
 
 export interface PortCall {
@@ -504,8 +516,11 @@ export interface VesselTrackResponse {
   ownership_chain: OwnershipLink[];
   owner_name: string | null;
   trade_activity: TradeActivity | null;
+  risk_scores: Record<string, number>;
   graph: { nodes: GraphNode[]; edges: GraphEdge[] };
+  trade_graph: { nodes: GraphNode[]; edges: GraphEdge[] };
   narrative?: string;
+  recommendations?: string[];
   sources: string[];
 }
 

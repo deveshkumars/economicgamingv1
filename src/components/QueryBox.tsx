@@ -54,14 +54,20 @@ interface Props {
   health: HealthResponse | null
   onQueryChange: (q: string) => void
   onAnalyze: (tickerOverride?: string) => void
+  onDeepAnalyze?: () => void
   onClear: () => void
 }
 
-export default function QueryBox({ query, loading, health, onQueryChange, onAnalyze, onClear }: Props) {
+export default function QueryBox({ query, loading, health, onQueryChange, onAnalyze, onDeepAnalyze, onClear }: Props) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      e.preventDefault()
-      onAnalyze()
+      if ((e.ctrlKey || e.metaKey) && onDeepAnalyze) {
+        e.preventDefault()
+        onDeepAnalyze()
+      } else {
+        e.preventDefault()
+        onAnalyze()
+      }
     }
   }
 
@@ -78,6 +84,16 @@ export default function QueryBox({ query, loading, health, onQueryChange, onAnal
         <button className="btn btn-primary" disabled={loading} onClick={() => onAnalyze()}>
           Analyze
         </button>
+        {onDeepAnalyze && (
+          <button
+            className="btn btn-secondary"
+            disabled={loading}
+            onClick={onDeepAnalyze}
+            style={{ borderColor: '#58a6ff', color: '#58a6ff' }}
+          >
+            Deep Analysis
+          </button>
+        )}
         <button className="btn btn-secondary" onClick={onClear}>
           Clear
         </button>

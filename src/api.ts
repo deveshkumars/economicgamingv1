@@ -171,7 +171,7 @@ export async function fetchSanctionsScreenBatch(names: string[]): Promise<Sancti
 
 export async function fetchFollowUp(
   question: string,
-  contextType: 'company' | 'orchestrator',
+  contextType: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: Record<string, any>,
   history: { role: 'user' | 'assistant'; text: string }[] = [],

@@ -7,12 +7,14 @@ interface Message {
 }
 
 interface Props {
-  contextType: 'company' | 'orchestrator'
+  contextType: 'company' | 'orchestrator' | 'vessel' | 'person' | 'sector'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: Record<string, any>
+  /** Pre-fill the input (e.g. from commodity drill-down). Set to '' to clear. */
+  prefillQuestion?: string
 }
 
-export default function FollowUpBar({ contextType, context }: Props) {
+export default function FollowUpBar({ contextType, context, prefillQuestion }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,6 +33,15 @@ export default function FollowUpBar({ contextType, context }: Props) {
     setMessages([])
     setInput('')
   }, [context])
+
+  // Pre-fill from drill-down click
+  useEffect(() => {
+    if (prefillQuestion) {
+      setInput(prefillQuestion)
+      inputRef.current?.focus()
+      inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [prefillQuestion])
 
   async function handleSubmit() {
     const question = input.trim()
@@ -168,7 +179,7 @@ export default function FollowUpBar({ contextType, context }: Props) {
           onKeyDown={handleKeyDown}
           placeholder="Ask anything about this analysis… (Enter to send, Shift+Enter for newline)"
           disabled={loading}
-          rows={1}
+          rows={3}
           style={{
             flex: 1,
             background: '#161b22',
@@ -176,13 +187,13 @@ export default function FollowUpBar({ contextType, context }: Props) {
             borderRadius: 6,
             color: '#c9d1d9',
             fontSize: 13,
-            padding: '8px 12px',
-            resize: 'none',
+            padding: '10px 14px',
+            resize: 'vertical',
             outline: 'none',
             fontFamily: 'inherit',
             lineHeight: 1.5,
-            minHeight: 38,
-            maxHeight: 120,
+            minHeight: 72,
+            maxHeight: 200,
             overflowY: 'auto',
             transition: 'border-color 0.15s',
           }}

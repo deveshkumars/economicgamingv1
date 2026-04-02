@@ -66,6 +66,7 @@ export default function App() {
   const [personData, setPersonData] = useState<PersonProfileResponse | null>(null)
   const [sectorData, setSectorData] = useState<SectorAnalysisResponse | null>(null)
   const [vesselData, setVesselData] = useState<VesselTrackResponse | null>(null)
+  const [vesselDrillDown, setVesselDrillDown] = useState('')
   const [orchestratorData, setOrchestratorData] = useState<ImpactAssessmentResult | null>(null)
   const [graphData, setGraphData] = useState<EntityGraphResponse | null>(null)
   const [graphLoading, setGraphLoading] = useState(false)
@@ -94,7 +95,7 @@ export default function App() {
     setImpactData(null)
     setPersonData(null)
     setSectorData(null)
-    setVesselData(null)
+    setVesselData(null); setVesselDrillDown('')
     setOrchestratorData(null)
     setGraphData(null)
     setGraphLoading(false)
@@ -143,7 +144,7 @@ export default function App() {
     setImpactData(null)
     setPersonData(null)
     setSectorData(null)
-    setVesselData(null)
+    setVesselData(null); setVesselDrillDown('')
     setOrchestratorData(null)
     setGraphData(null)
     setGraphLoading(false)
@@ -294,7 +295,7 @@ export default function App() {
     setImpactData(null)
     setPersonData(null)
     setSectorData(null)
-    setVesselData(null)
+    setVesselData(null); setVesselDrillDown('')
     setOrchestratorData(null)
     setGraphData(null)
     setGraphLoading(false)
@@ -361,7 +362,7 @@ export default function App() {
           health={health}
           onQueryChange={setQuery}
           onAnalyze={startAnalysis}
-          onOrchestrate={(q) => runOrchestratorAnalysis(q)}
+          onDeepAnalyze={() => runOrchestratorAnalysis()}
           onClear={clearAll}
         />
 
@@ -486,7 +487,22 @@ export default function App() {
 
         {/* Vessel intelligence view */}
         {mode === 'vessel' && vesselData && (
-          <VesselView data={vesselData} />
+          <>
+            <VesselView data={vesselData} onDrillDown={(q) => setVesselDrillDown(q)} />
+            <FollowUpBar
+              contextType="vessel"
+              context={{
+                vessel: vesselData.vessel,
+                ownership_chain: vesselData.ownership_chain,
+                trade_activity: vesselData.trade_activity,
+                countries_visited: vesselData.countries_visited,
+                narrative: vesselData.narrative,
+                is_sanctioned: vesselData.is_sanctioned,
+                risk_scores: vesselData.risk_scores,
+              }}
+              prefillQuestion={vesselDrillDown}
+            />
+          </>
         )}
 
         {/* Full orchestrator view */}
@@ -494,8 +510,8 @@ export default function App() {
           <OrchestratorView data={orchestratorData} />
         )}
 
-        {/* Entity graph — rendered for structured modes when available */}
-        {mode !== 'orchestrator' && (
+        {/* Entity graph — rendered for structured modes when available (vessel has its own tabbed graph) */}
+        {mode !== 'orchestrator' && mode !== 'vessel' && (
           <EntityGraphSection
             graphData={graphData}
             graphLoading={graphLoading}
