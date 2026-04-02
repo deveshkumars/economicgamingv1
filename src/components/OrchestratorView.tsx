@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { GraphEdge, GraphNode, ImpactAssessmentResult } from '../types'
 import GraphViewer from './GraphViewer'
 import DebugPanel from './DebugPanel'
+import FollowUpBar from './FollowUpBar'
 
 const ENTITY_GROUP_COLOR: Record<string, string> = {
   company: '#4A90D9',
@@ -179,6 +180,20 @@ export default function OrchestratorView({ data }: Props) {
           ))}
         </div>
       )}
+
+      <FollowUpBar
+        contextType="orchestrator"
+        context={{
+          query: data.query,
+          scenario_type: data.scenario_type,
+          executive_summary: data.executive_summary,
+          findings: data.findings,
+          friendly_fire: data.friendly_fire,
+          recommendations: data.recommendations,
+          confidence_summary: data.confidence_summary,
+          tool_results: data.tool_results ?? {},
+        }}
+      />
 
       <DebugPanel data={data} label="Raw API Response — orchestrator" />
     </div>
