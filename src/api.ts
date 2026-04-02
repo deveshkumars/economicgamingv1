@@ -8,6 +8,11 @@ import type {
   VesselTrackResponse,
   OrchestratorStatusResponse,
   StartAnalysisResponse,
+  SayariResolveResponse,
+  SayariTraversalResponse,
+  SayariUBOResponse,
+  EntityRiskReport,
+  SanctionsScreenBatchResponse,
 } from './types'
 
 const API_BASE =
@@ -110,4 +115,82 @@ export async function fetchVesselTrack(query: string): Promise<VesselTrackRespon
     body: JSON.stringify({ query }),
   })
   return parseJson<VesselTrackResponse>(res)
+}
+
+// --- Sayari ---
+
+export async function fetchSayariResolve(query: string, entityType?: string): Promise<SayariResolveResponse> {
+  const url = `${API_BASE}/api/sayari/resolve`
+  const body: Record<string, unknown> = { query }
+  if (entityType) body.entity_type = entityType
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  return parseJson<SayariResolveResponse>(res)
+}
+
+export async function fetchSayariRelated(entityId: string, depth = 1, limit = 20): Promise<SayariTraversalResponse> {
+  const url = `${API_BASE}/api/sayari/related`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entity_id: entityId, depth, limit }),
+  })
+  return parseJson<SayariTraversalResponse>(res)
+}
+
+export async function fetchEntityRiskReport(
+  name: string,
+  entityType: string,
+  ticker?: string,
+  lei?: string,
+): Promise<EntityRiskReport> {
+  const url = `${API_BASE}/api/entity-risk-report`
+  const body: Record<string, unknown> = { name, entity_type: entityType }
+  if (ticker) body.ticker = ticker
+  if (lei) body.lei = lei
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  return parseJson<EntityRiskReport>(res)
+}
+
+export async function fetchSanctionsScreenBatch(names: string[]): Promise<SanctionsScreenBatchResponse> {
+  const url = `${API_BASE}/api/sanctions/screen-batch`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ names }),
+  })
+  return parseJson<SanctionsScreenBatchResponse>(res)
+}
+
+export async function fetchFollowUp(
+  question: string,
+  contextType: 'company' | 'orchestrator',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: Record<string, any>,
+  history: { role: 'user' | 'assistant'; text: string }[] = [],
+): Promise<{ answer: string }> {
+  const url = `${API_BASE}/api/followup`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, context_type: contextType, context, history }),
+  })
+  return parseJson<{ answer: string }>(res)
+}
+
+export async function fetchSayariUBO(entityId: string): Promise<SayariUBOResponse> {
+  const url = `${API_BASE}/api/sayari/ubo`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entity_id: entityId }),
+  })
+  return parseJson<SayariUBOResponse>(res)
 }

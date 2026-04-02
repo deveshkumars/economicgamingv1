@@ -81,8 +81,12 @@ export interface SanctionsImpactResponse {
   target: TargetInfo;
   comparables: Comparable[];
   projection: Projection;
+  control_comparables?: Comparable[];
+  control_projection?: Projection;
   metadata: {
     comparable_count: number;
+    control_peer_count?: number;
+    control_peer_tickers?: string[];
     time_window_days: [number, number];
     generated_at: string;
     sourcing_method?: 'claude' | 'cache' | 'static_fallback';
@@ -98,6 +102,7 @@ export interface GraphNode {
   title: string;
   group: string;
   color: string;
+  sayariId?: string;
 }
 
 export interface GraphEdge {
@@ -166,6 +171,9 @@ export interface ImpactAssessmentResult {
   confidence_summary: Record<string, string>;
   sources: { name: string; url?: string | null; accessed_at?: string }[];
   recommendations: string[];
+  /** Raw tool results from every pipeline step — available to follow-up chat */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tool_results?: Record<string, any>;
   /** Present when the orchestrator extracted a graph */
   entity_graph?: {
     entities: OrchestratorEntity[];
@@ -267,6 +275,135 @@ export interface SectorAnalysisResponse {
   supply_chain_exposures?: SupplyChainExposure[];
   geopolitical_tensions?: GeopoliticalTension[];
   sources: string[];
+}
+
+// --- Sayari ---
+
+export interface SayariEntity {
+  entity_id: string;
+  label: string;
+  type: string;
+  country: string | null;
+  addresses: string[];
+  identifiers: string[];
+  sources: string[];
+  pep: boolean;
+  sanctioned: boolean;
+}
+
+export interface SayariRelationship {
+  source_id: string;
+  target_id: string;
+  relationship_type: string;
+  attributes: Record<string, string>;
+}
+
+export interface SayariResolveResponse {
+  entities: SayariEntity[];
+  query: string;
+}
+
+export interface SayariTraversalResponse {
+  root_id: string;
+  entities: SayariEntity[];
+  relationships: SayariRelationship[];
+}
+
+export interface SayariUBOOwner {
+  entity_id: string;
+  name: string;
+  type: string;
+  country: string | null;
+  ownership_percentage: number | null;
+  path_length: number;
+  sanctioned: boolean;
+  pep: boolean;
+}
+
+export interface SayariUBOResponse {
+  target_id: string;
+  target_name: string;
+  owners: SayariUBOOwner[];
+}
+
+// --- Entity Risk Report ---
+
+export interface RiskIndicator {
+  label: string;
+  value: string;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface SanctionDetail {
+  name: string;
+  score: number;
+  programs: string[];
+  remarks: string | null;
+}
+
+export interface EntityRiskReport {
+  name: string;
+  entity_type: string;
+  risk_level: 'HIGH' | 'MEDIUM' | 'LOW';
+  is_sanctioned: boolean;
+  sanction_programs: string[];
+  sanction_lists: string[];
+  sanction_details: SanctionDetail[];
+  country: string | null;
+  corporate_info: {
+    legal_name?: string;
+    lei?: string;
+    country?: string;
+    status?: string;
+    ultimate_parent_lei?: string;
+    incorporation_date?: string;
+    registered_address?: string;
+  };
+  officers: { name: string; role: string }[];
+  offshore_flags: { entity: string; dataset: string; jurisdiction: string }[];
+  market_info: {
+    ticker: string;
+    current_price: number | null;
+    market_cap: number | null;
+    change_pct: number | null;
+    sector: string | null;
+    industry: string | null;
+    exchange: string | null;
+    fifty_two_week_high: number | null;
+    fifty_two_week_low: number | null;
+    pct_from_52w_high: number | null;
+    analyst_target: number | null;
+    analyst_recommendation: string | null;
+    analyst_count: number | null;
+    description: string | null;
+  } | null;
+  exposure: {
+    top_holders: {
+      name: string;
+      pct_held: number | null;
+      value_usd: number | null;
+      is_pension: boolean;
+    }[];
+    pension_count: number;
+    pension_names: string[];
+    total_institutional_usd: number | null;
+  } | null;
+  risk_indicators: RiskIndicator[];
+  narrative: string;
+  sources: string[];
+  generated_at: string;
+}
+
+// --- Sanctions Screening ---
+
+export interface SanctionsScreenResult {
+  sanctioned: boolean;
+  lists: string[];
+  programs: string[];
+}
+
+export interface SanctionsScreenBatchResponse {
+  results: Record<string, SanctionsScreenResult>;
 }
 
 // --- Vessel Track ---

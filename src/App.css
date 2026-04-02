@@ -89,6 +89,35 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .graph-empty { position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%); color: #484f58; font-size: 14px; text-align: center; }
 .graph-stats { font-size: 11px; color: #484f58; text-align: center; padding: 4px 0; }
+.graph-stats-sayari { color: #E040FB; }
+.graph-click-hint { color: #30363d; font-style: italic; }
+.graph-expanding { position: absolute; top: 8px; right: 12px; z-index: 10;
+  font-size: 11px; color: #E040FB; background: rgba(13,17,23,0.85);
+  padding: 4px 10px; border-radius: 4px; border: 1px solid #E040FB40; }
+.graph-expand-msg { position: absolute; top: 8px; right: 12px; z-index: 10;
+  font-size: 11px; color: #8b949e; background: rgba(13,17,23,0.85);
+  padding: 4px 10px; border-radius: 4px; border: 1px solid #30363d; }
+
+/* UBO Panel */
+.ubo-panel { margin-top: 16px; }
+.ubo-header { font-size: 14px; color: #8b949e; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid #30363d; }
+.ubo-target { text-transform: none; color: #c9d1d9; font-weight: 500; }
+.ubo-loading { color: #484f58; font-size: 13px; padding: 8px 0; }
+.ubo-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ubo-table th { text-align: left; color: #8b949e; font-weight: 500; padding: 6px 10px;
+  border-bottom: 1px solid #30363d; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.3px; }
+.ubo-table td { padding: 8px 10px; border-bottom: 1px solid #21262d; color: #c9d1d9; }
+.ubo-name { font-weight: 500; }
+.ubo-flags { display: flex; gap: 6px; }
+.ubo-flag { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: 0.03em; }
+.ubo-flag-sanction { background: rgba(248, 81, 73, 0.15); color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.3); }
+.ubo-flag-pep { background: rgba(248, 193, 53, 0.15); color: #e3b341;
+  border: 1px solid rgba(248, 193, 53, 0.3); }
 
 /* Multi-mode view shared styles */
 .view-section { margin-bottom: 24px; }
@@ -135,3 +164,103 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .debug-num  { color: #f2cc60; }
 .debug-bool { color: #ff7b72; }
 .debug-null { color: #8b949e; }
+
+/* Graph node action bar */
+.graph-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.graph-action-bar-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #c9d1d9;
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.graph-action-btn {
+  padding: 5px 14px;
+  font-size: 12px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+/* Risk report slide-in panel */
+.risk-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 200;
+}
+.risk-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: 95vw;
+  background: #161b22;
+  border-left: 1px solid #30363d;
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.2s ease;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.4);
+}
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.risk-panel-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #30363d;
+  flex-shrink: 0;
+}
+.risk-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+}
+.risk-panel-loading {
+  display: flex;
+  align-items: center;
+  color: #8b949e;
+  font-size: 13px;
+  padding: 20px 0;
+}
+.risk-panel-section-title {
+  font-size: 11px;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #21262d;
+}
+.risk-panel-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 7px 0;
+  border-bottom: 1px solid #1a1f27;
+  gap: 12px;
+  font-size: 12px;
+}
+.risk-panel-kv > span:first-child { color: #8b949e; flex-shrink: 0; }
+.risk-panel-kv > span:last-child  { color: #c9d1d9; text-align: right; word-break: break-word; }

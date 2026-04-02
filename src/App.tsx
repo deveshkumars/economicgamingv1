@@ -9,6 +9,8 @@ import {
   fetchVesselTrack,
   startOrchestratorAnalysis,
   pollAnalysisStatus,
+  fetchSayariResolve,
+  fetchSayariUBO,
 } from './api'
 import Header from './components/Header'
 import QueryBox, { extractTicker } from './components/QueryBox'
@@ -24,6 +26,7 @@ import VesselView from './components/VesselView'
 import OrchestratorView from './components/OrchestratorView'
 import NarrativeCard from './components/NarrativeCard'
 import DebugPanel from './components/DebugPanel'
+import FollowUpBar from './components/FollowUpBar'
 import type {
   HealthResponse,
   SanctionsImpactResponse,
@@ -33,6 +36,7 @@ import type {
   SectorAnalysisResponse,
   VesselTrackResponse,
   ImpactAssessmentResult,
+  SayariUBOOwner,
 } from './types'
 import './App.css'
 
@@ -66,6 +70,10 @@ export default function App() {
   const [graphData, setGraphData] = useState<EntityGraphResponse | null>(null)
   const [graphLoading, setGraphLoading] = useState(false)
 
+  const [uboOwners, setUboOwners] = useState<SayariUBOOwner[]>([])
+  const [uboLoading, setUboLoading] = useState(false)
+  const [uboTargetName, setUboTargetName] = useState('')
+
   const [hiddenDatasets, setHiddenDatasets] = useState<Set<number>>(new Set())
   const chartRef = useRef<ImpactChartHandle>(null)
 
@@ -90,12 +98,19 @@ export default function App() {
     setOrchestratorData(null)
     setGraphData(null)
     setGraphLoading(false)
+    setUboOwners([])
+    setUboLoading(false)
+    setUboTargetName('')
     setHiddenDatasets(new Set())
   }
 
   async function loadEntityGraph(ticker: string) {
     setGraphLoading(true)
     setGraphData(null)
+    setUboOwners([])
+    setUboLoading(true)
+    setUboTargetName('')
+
     try {
       const data = await fetchEntityGraph(ticker)
       setGraphData(data)
@@ -103,6 +118,20 @@ export default function App() {
       // non-critical
     } finally {
       setGraphLoading(false)
+    }
+
+    try {
+      const resolved = await fetchSayariResolve(ticker)
+      if (resolved.entities.length > 0) {
+        const primaryId = resolved.entities[0].entity_id
+        setUboTargetName(resolved.entities[0].label || ticker)
+        const uboResult = await fetchSayariUBO(primaryId)
+        setUboOwners(uboResult.owners)
+      }
+    } catch {
+      // non-critical — Sayari may not be configured
+    } finally {
+      setUboLoading(false)
     }
   }
 
@@ -118,6 +147,9 @@ export default function App() {
     setOrchestratorData(null)
     setGraphData(null)
     setGraphLoading(false)
+    setUboOwners([])
+    setUboLoading(false)
+    setUboTargetName('')
     setProgress([])
     setHiddenDatasets(new Set())
     setMode(null)
@@ -413,6 +445,32 @@ export default function App() {
             <div className="source-note">
               Data sources: Yahoo Finance, OFAC SDN, Trade.gov Consolidated Screening List, OpenSanctions
             </div>
+
+            <FollowUpBar
+              contextType="company"
+              context={{
+                target: impactData.target,
+                projection: {
+                  summary: impactData.projection.summary,
+                  coherence_score: impactData.projection.coherence_score,
+                  coherence_low: impactData.projection.coherence_low,
+                },
+                comparables: impactData.comparables.map((c) => ({
+                  name: c.name,
+                  ticker: c.ticker,
+                  sanction_date: c.sanction_date,
+                  description: c.description,
+                  sector: c.sector,
+                  sanction_type: c.sanction_type,
+                })),
+                control_comparables: (impactData.control_comparables ?? []).map((c) => ({
+                  name: c.name,
+                  ticker: c.ticker,
+                })),
+                narrative: impactData.narrative,
+                metadata: impactData.metadata,
+              }}
+            />
           </div>
         )}
 
@@ -438,7 +496,13 @@ export default function App() {
 
         {/* Entity graph — rendered for structured modes when available */}
         {mode !== 'orchestrator' && (
-          <EntityGraphSection graphData={graphData} graphLoading={graphLoading} />
+          <EntityGraphSection
+            graphData={graphData}
+            graphLoading={graphLoading}
+            uboOwners={uboOwners}
+            uboLoading={uboLoading}
+            uboTargetName={uboTargetName}
+          />
         )}
 
         {/* Debug panel — shows raw JSON for whatever mode just ran */}
