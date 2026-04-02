@@ -421,12 +421,80 @@ export interface SanctionsMatch {
   programs: string[];
 }
 
+export interface OwnershipLink {
+  entity_id: string;
+  name: string;
+  entity_type: string;
+  country: string | null;
+  ownership_percentage: number | null;
+  is_sanctioned: boolean;
+  is_pep: boolean;
+  depth: number;
+  relationship_type: string;
+  parent_entity_id: string | null;
+}
+
+export interface TradeRecord {
+  supplier: string;
+  buyer: string;
+  hs_code: string | null;
+  hs_description: string | null;
+  commodity_category: string;
+  departure_country: string | null;
+  arrival_country: string | null;
+  date: string | null;
+  supplier_risks: string[];
+  buyer_risks: string[];
+}
+
+export interface SankeyFlow {
+  source: string;
+  target: string;
+  value: number;
+  category?: string;
+}
+
+export interface TradeActivity {
+  records: TradeRecord[];
+  top_hs_codes: { code: string; description: string }[];
+  trade_countries: string[];
+  record_count: number;
+  sankey_flows?: SankeyFlow[];
+  sankey_labels?: Record<string, string>;
+}
+
+export interface PortCall {
+  port_name: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  arrival: string;
+  departure: string;
+}
+
+export interface PortStopInferred {
+  latitude: number;
+  longitude: number;
+  arrival_ts: number;
+  departure_ts: number;
+  duration_hours: number;
+  position_count: number;
+}
+
 export interface VesselTrackResponse {
   vessel: Record<string, unknown>;
   is_sanctioned: boolean;
   sanctions_matches: SanctionsMatch[];
   route_history: RoutePoint[];
+  countries_visited: string[];
+  port_calls: PortCall[];
+  port_stops_inferred: PortStopInferred[];
+  ownership_chain: OwnershipLink[];
+  owner_name: string | null;
+  trade_activity: TradeActivity | null;
+  risk_scores?: Record<string, number>;
   graph: { nodes: GraphNode[]; edges: GraphEdge[] };
+  trade_graph?: { nodes: GraphNode[]; edges: GraphEdge[] };
   narrative?: string;
   sources: string[];
 }

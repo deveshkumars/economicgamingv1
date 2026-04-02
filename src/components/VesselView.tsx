@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { VesselTrackResponse, RoutePoint } from '../types'
+import { Chart, LinearScale, Tooltip } from 'chart.js'
+import { SankeyController, Flow } from 'chartjs-chart-sankey'
+import type { VesselTrackResponse, RoutePoint, OwnershipLink, SankeyFlow } from '../types'
 import NarrativeCard from './NarrativeCard'
 import GraphViewer from './GraphViewer'
+
+Chart.register(LinearScale, Tooltip, SankeyController, Flow)
 
 interface Props {
   data: VesselTrackResponse
@@ -166,9 +170,143 @@ function VesselMap({ routeHistory }: { routeHistory: RoutePoint[] }) {
   )
 }
 
+// ── Sankey diagram ───────────────────────────────────────────────────────────
+
+function TradeFlowSankey({ flows, labels }: { flows: SankeyFlow[]; labels?: Record<string, string> }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const chartRef = useRef<Chart | null>(null)
+
+  useEffect(() => {
+    if (!canvasRef.current || flows.length === 0) return
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null }
+
+    const agg = new Map<string, number>()
+    for (const f of flows) {
+      const key = `${f.source}\x00${f.target}`
+      agg.set(key, (agg.get(key) || 0) + (f.value || 1))
+    }
+    const sankeyData = Array.from(agg.entries()).map(([key, flow]) => {
+      const [from, to] = key.split('\x00')
+      return { from, to, flow }
+    })
+
+    const palette = ['#58a6ff','#3fb950','#f0883e','#a371f7','#f85149','#79c0ff','#56d364','#d2a8ff']
+    const nodeColors: Record<string, string> = {}
+    let ci = 0
+    for (const d of sankeyData) {
+      if (!nodeColors[d.from]) nodeColors[d.from] = palette[ci++ % palette.length]
+      if (!nodeColors[d.to])   nodeColors[d.to]   = palette[ci++ % palette.length]
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chartRef.current = new Chart(canvasRef.current, {
+      type: 'sankey',
+      data: {
+        datasets: [{
+          data: sankeyData,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          colorFrom: (c: any) => nodeColors[c.dataset?.data?.[c.dataIndex]?.from] || '#58a6ff',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          colorTo:   (c: any) => nodeColors[c.dataset?.data?.[c.dataIndex]?.to]   || '#3fb950',
+          colorMode: 'gradient',
+          labels: labels || {},
+          borderWidth: 0,
+          nodeWidth: 14,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              label: (ctx: any) => `${ctx.raw?.from} → ${ctx.raw?.to}: ${ctx.raw?.flow} shipments`,
+            },
+          },
+        },
+      },
+    } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    return () => { chartRef.current?.destroy(); chartRef.current = null }
+  }, [flows, labels])
+
+  if (flows.length === 0) return <p style={{ color: '#484f58', fontSize: '13px' }}>No trade flow data available.</p>
+  return <div style={{ height: 320, position: 'relative' }}><canvas ref={canvasRef} /></div>
+}
+
+// ── Ownership chain ───────────────────────────────────────────────────────────
+
+function OwnershipChain({ chain }: { chain: OwnershipLink[] }) {
+  if (chain.length === 0) return <p style={{ color: '#484f58', fontSize: '13px' }}>No Sayari ownership data.</p>
+
+  const sorted = [...chain].sort((a, b) => a.depth - b.depth)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {sorted.map((link, i) => (
+        <div key={i} style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          paddingLeft: (link.depth - 1) * 20,
+        }}>
+          <span style={{
+            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+            background: link.is_sanctioned ? '#f85149' : link.is_pep ? '#f0883e' : '#58a6ff',
+          }} />
+          <span style={{ fontSize: 13, color: link.is_sanctioned ? '#f85149' : '#e6edf3', fontWeight: link.depth === 1 ? 600 : 400 }}>
+            {link.name}
+          </span>
+          {link.entity_type && (
+            <span style={{ fontSize: 10, color: '#8b949e', background: '#21262d', padding: '1px 6px', borderRadius: 4 }}>
+              {link.entity_type}
+            </span>
+          )}
+          {link.country && (
+            <span style={{ fontSize: 11, color: '#8b949e' }}>{link.country}</span>
+          )}
+          {link.ownership_percentage != null && (
+            <span style={{ fontSize: 11, color: '#3fb950' }}>{link.ownership_percentage.toFixed(1)}%</span>
+          )}
+          {link.is_sanctioned && (
+            <span style={{ fontSize: 10, color: '#f85149', fontWeight: 700 }}>SANCTIONED</span>
+          )}
+          {link.is_pep && !link.is_sanctioned && (
+            <span style={{ fontSize: 10, color: '#f0883e' }}>PEP</span>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export default function VesselView({ data }: Props) {
   const { vessel, is_sanctioned, sanctions_matches, route_history } = data
-  const hasGraph = data.graph.nodes.length > 0
+  const [graphTab, setGraphTab] = useState<'ownership' | 'trade'>('ownership')
+
+  const hasOwnershipGraph = data.graph.nodes.length > 0
+  const hasTradeGraph = (data.trade_graph?.nodes?.length ?? 0) > 0
+  const hasAnyGraph = hasOwnershipGraph || hasTradeGraph
+
+  const ta = data.trade_activity
+  const sankeyFlows = ta?.sankey_flows && ta.sankey_flows.length > 0
+    ? ta.sankey_flows
+    : (() => {
+        // client-side fallback: build two-hop flows from records
+        const counts = new Map<string, number>()
+        for (const r of (ta?.records ?? [])) {
+          if (r.departure_country && r.arrival_country && r.commodity_category) {
+            const key = `${r.departure_country} (origin)\x00${r.commodity_category}\x00${r.arrival_country} (dest)`
+            counts.set(key, (counts.get(key) || 0) + 1)
+          }
+        }
+        const flows: SankeyFlow[] = []
+        for (const [key, v] of counts) {
+          const [src, mid, dst] = key.split('\x00')
+          flows.push({ source: src, target: mid, value: v })
+          flows.push({ source: mid, target: dst, value: v })
+        }
+        return flows
+      })()
 
   const stats = [
     { label: 'Vessel Name', value: vf(vessel, 'name') },
@@ -196,7 +334,7 @@ export default function VesselView({ data }: Props) {
         ))}
       </div>
 
-      {/* Sanctions + route table */}
+      {/* Sanctions + AIS track */}
       <div className="view-grid">
         <div className="info-card">
           <h3>Sanctions Status</h3>
@@ -204,7 +342,7 @@ export default function VesselView({ data }: Props) {
             {is_sanctioned ? (
               <>
                 <span className="sanctions-badge sanctioned">🚨 OFAC LISTED</span>
-                <ul style={{ marginTop: '8px', listStyle: 'none' }}>
+                <ul style={{ marginTop: '8px', listStyle: 'none', padding: 0 }}>
                   {sanctions_matches.slice(0, 3).map((m, i) => (
                     <li key={i} style={{ fontSize: '12px', color: '#f85149', padding: '4px 0' }}>
                       {m.name} (score: {(m.score || 0).toFixed(2)})
@@ -216,19 +354,26 @@ export default function VesselView({ data }: Props) {
               <span className="sanctions-badge clear">✓ No OFAC Vessel Match</span>
             )}
           </div>
+          {/* Countries visited */}
+          {(data.countries_visited?.length ?? 0) > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 11, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
+                Countries Visited
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {data.countries_visited.map((c) => (
+                  <span key={c} style={{ fontSize: 11, background: '#21262d', border: '1px solid #30363d', borderRadius: 4, padding: '2px 7px', color: '#c9d1d9' }}>{c}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="info-card">
-          <h3>Recent AIS Track (last 14 days)</h3>
+          <h3>Recent AIS Track</h3>
           <div style={{ overflowX: 'auto' }}>
             <table className="view-table">
-              <thead>
-                <tr>
-                  <th>Lat</th>
-                  <th>Lon</th>
-                  <th>Speed</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Lat</th><th>Lon</th><th>Speed</th></tr></thead>
               <tbody>
                 {route_history.slice(-12).length > 0
                   ? route_history.slice(-12).map((p, i) => (
@@ -238,38 +383,137 @@ export default function VesselView({ data }: Props) {
                         <td>{p.speed != null ? p.speed + ' kn' : '—'}</td>
                       </tr>
                     ))
-                  : (
-                      <tr>
-                        <td colSpan={3} style={{ color: '#484f58' }}>No AIS track data available</td>
-                      </tr>
-                    )}
+                  : <tr><td colSpan={3} style={{ color: '#484f58' }}>No AIS track data</td></tr>
+                }
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
+      {/* Beneficial Ownership Chain */}
+      {(data.ownership_chain?.length ?? 0) > 0 && (
+        <div className="info-card" style={{ marginTop: 20 }}>
+          <h3>
+            Beneficial Ownership Chain
+            {data.owner_name && <span style={{ fontSize: 12, color: '#8b949e', fontWeight: 400, marginLeft: 8 }}>— {data.owner_name}</span>}
+            <span style={{ fontSize: 11, color: '#58a6ff', fontWeight: 400, marginLeft: 8 }}>(Sayari Graph)</span>
+          </h3>
+          <div style={{ marginTop: 10 }}>
+            <OwnershipChain chain={data.ownership_chain} />
+          </div>
+        </div>
+      )}
+
+      {/* Port Calls */}
+      {(data.port_calls?.length ?? 0) > 0 && (
+        <div className="info-card" style={{ marginTop: 20 }}>
+          <h3>Port Calls <span style={{ fontSize: 11, color: '#8b949e', fontWeight: 400 }}>(last 90 days)</span></h3>
+          <div style={{ overflowX: 'auto', marginTop: 8 }}>
+            <table className="view-table">
+              <thead><tr><th>Port</th><th>Country</th><th>Arrival</th><th>Departure</th></tr></thead>
+              <tbody>
+                {data.port_calls.map((pc, i) => (
+                  <tr key={i}>
+                    <td>{pc.port_name || '—'}</td>
+                    <td>{pc.country || '—'}</td>
+                    <td style={{ fontSize: 11 }}>{pc.arrival ? new Date(pc.arrival).toLocaleDateString() : '—'}</td>
+                    <td style={{ fontSize: 11 }}>{pc.departure ? new Date(pc.departure).toLocaleDateString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Trade Activity */}
+      {ta && ta.record_count > 0 && (
+        <div className="info-card" style={{ marginTop: 20 }}>
+          <h3>
+            Trade Activity
+            <span style={{ fontSize: 11, color: '#58a6ff', fontWeight: 400, marginLeft: 8 }}>(Sayari Graph — {ta.record_count} records)</span>
+          </h3>
+
+          {/* Top HS codes */}
+          {ta.top_hs_codes.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '10px 0' }}>
+              {ta.top_hs_codes.map((hs, i) => (
+                <span key={i} style={{ fontSize: 11, background: '#161b22', border: '1px solid #30363d', borderRadius: 4, padding: '2px 8px', color: '#8b949e' }}>
+                  {hs.description || hs.code}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Sankey diagram */}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 11, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
+              Trade Flow Diagram
+            </div>
+            <TradeFlowSankey flows={sankeyFlows} labels={ta.sankey_labels || {}} />
+          </div>
+
+          {/* Shipment records table */}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 11, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
+              Recent Shipments
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="view-table">
+                <thead>
+                  <tr><th>Date</th><th>Supplier</th><th>Buyer</th><th>Route</th><th>Commodity</th></tr>
+                </thead>
+                <tbody>
+                  {ta.records.slice(0, 12).map((r, i) => (
+                    <tr key={i}>
+                      <td style={{ fontSize: 11 }}>{r.date || '—'}</td>
+                      <td style={{ fontSize: 12, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.supplier}>{r.supplier || '—'}</td>
+                      <td style={{ fontSize: 12, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.buyer}>{r.buyer || '—'}</td>
+                      <td style={{ fontSize: 11, color: '#8b949e' }}>{r.departure_country || '?'} → {r.arrival_country || '?'}</td>
+                      <td style={{ fontSize: 11, color: '#8b949e' }}>{r.commodity_category || r.hs_code || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AIS Route Map */}
       <VesselMap routeHistory={route_history} />
 
-      {/* Ownership & Sanctions Network */}
-      {hasGraph && (
-        <div className="graph-section">
-          <div className="graph-section-header">Ownership &amp; Sanctions Network</div>
-          <div className="graph-legend">
-            {[
-              { label: 'Vessel', color: '#2E8B57' },
-              { label: 'Flag State', color: '#DC143C' },
-              { label: 'Sanctions', color: '#F85149' },
-            ].map((item) => (
-              <span key={item.label} className="legend-item">
-                <span className="legend-dot" style={{ background: item.color }} />
-                {item.label}
-              </span>
-            ))}
-          </div>
-          <div className="graph-container">
-            <GraphViewer nodes={data.graph.nodes} edges={data.graph.edges} />
+      {/* Tabbed graphs: ownership network + trade network */}
+      {hasAnyGraph && (
+        <div className="info-card" style={{ marginTop: 20 }}>
+          {(hasOwnershipGraph && hasTradeGraph) && (
+            <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
+              {(['ownership', 'trade'] as const).map((tab) => (
+                <button key={tab} onClick={() => setGraphTab(tab)} style={{
+                  padding: '5px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  border: `1px solid ${graphTab === tab ? '#58a6ff' : '#30363d'}`,
+                  borderRadius: 6, background: graphTab === tab ? 'rgba(88,166,255,0.1)' : 'transparent',
+                  color: graphTab === tab ? '#58a6ff' : '#8b949e',
+                }}>
+                  {tab === 'ownership' ? 'Ownership & Sanctions Network' : 'Trade Network'}
+                </button>
+              ))}
+            </div>
+          )}
+          {!hasOwnershipGraph || !hasTradeGraph ? (
+            <h3>{hasOwnershipGraph ? 'Ownership & Sanctions Network' : 'Trade Network'}</h3>
+          ) : null}
+          <div style={{ height: 400 }}>
+            {graphTab === 'ownership' && hasOwnershipGraph && (
+              <GraphViewer nodes={data.graph.nodes} edges={data.graph.edges} />
+            )}
+            {graphTab === 'trade' && hasTradeGraph && (
+              <GraphViewer nodes={data.trade_graph!.nodes} edges={data.trade_graph!.edges} />
+            )}
+            {graphTab === 'ownership' && !hasOwnershipGraph && hasTradeGraph && (
+              <GraphViewer nodes={data.trade_graph!.nodes} edges={data.trade_graph!.edges} />
+            )}
           </div>
         </div>
       )}

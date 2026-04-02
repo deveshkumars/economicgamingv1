@@ -494,8 +494,8 @@ export default function App() {
           <OrchestratorView data={orchestratorData} />
         )}
 
-        {/* Entity graph — rendered for structured modes when available */}
-        {mode !== 'orchestrator' && (
+        {/* Entity graph — rendered for company/person/sector modes (vessel has its own graph) */}
+        {mode !== 'orchestrator' && mode !== 'vessel' && (
           <EntityGraphSection
             graphData={graphData}
             graphLoading={graphLoading}
