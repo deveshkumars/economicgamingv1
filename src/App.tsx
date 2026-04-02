@@ -22,7 +22,7 @@ import ComparablesTable from './components/ComparablesTable'
 import EntityGraphSection from './components/EntityGraphSection'
 import PersonView from './components/PersonView'
 import SectorView from './components/SectorView'
-import VesselView from './components/VesselView'
+import VesselReport from './components/VesselReport'
 import OrchestratorView from './components/OrchestratorView'
 import NarrativeCard from './components/NarrativeCard'
 import DebugPanel from './components/DebugPanel'
@@ -361,7 +361,6 @@ export default function App() {
           health={health}
           onQueryChange={setQuery}
           onAnalyze={startAnalysis}
-          onOrchestrate={(q) => runOrchestratorAnalysis(q)}
           onClear={clearAll}
         />
 
@@ -486,7 +485,7 @@ export default function App() {
 
         {/* Vessel intelligence view */}
         {mode === 'vessel' && vesselData && (
-          <VesselView data={vesselData} />
+          <VesselReport data={vesselData} />
         )}
 
         {/* Full orchestrator view */}
