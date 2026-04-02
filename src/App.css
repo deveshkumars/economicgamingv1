@@ -264,3 +264,72 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 }
 .risk-panel-kv > span:first-child { color: #8b949e; flex-shrink: 0; }
 .risk-panel-kv > span:last-child  { color: #c9d1d9; text-align: right; word-break: break-word; }
+
+/* Entity report layout */
+.entity-report { display: flex; flex-direction: column; gap: 20px; }
+.entity-report .info-card { margin-bottom: 0; }
+
+/* Stat boxes (vessel details, etc.) */
+.stat-box { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 10px 14px; }
+.stat-box .label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-box .value { font-size: 16px; font-weight: 600; color: #e6edf3; margin-top: 2px; }
+
+/* Source chips */
+.source-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.source-chip { font-size: 11px; color: #484f58; padding: 2px 8px; border: 1px solid #21262d; border-radius: 12px; }
+
+/* SectorIntelligenceView */
+.si-root { margin-top: 32px; }
+.si-section-label { font-size: 11px; font-weight: 600; color: #484f58; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
+.si-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.si-header-icon { font-size: 36px; }
+.si-header-title { font-size: 22px; font-weight: 700; color: #e6edf3; letter-spacing: 0.5px; }
+.si-header-sub { font-size: 13px; color: #8b949e; margin-top: 2px; }
+.si-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+@media (max-width: 700px) { .si-stats { grid-template-columns: 1fr 1fr; } }
+.si-stat-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; text-align: center; }
+.si-stat-label { font-size: 11px; font-weight: 600; color: #8b949e; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+.si-stat-value { font-size: 36px; font-weight: 700; color: #e6edf3; }
+.si-players-section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 28px; }
+.si-players-label { font-size: 13px; font-weight: 600; color: #8b949e; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; }
+.si-players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.si-company-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.si-company-card:hover { border-color: #58a6ff; }
+.si-company-card.sanctioned { border-color: rgba(248, 81, 73, 0.5); background: rgba(248, 81, 73, 0.05); }
+.si-company-card.sanctioned:hover { border-color: #f85149; }
+.si-company-name { font-size: 14px; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+.si-company-ticker { font-size: 13px; color: #58a6ff; font-family: monospace; margin-bottom: 3px; }
+.si-company-country { font-size: 12px; color: #8b949e; }
+.si-sanctions-badge { margin-top: 8px; font-size: 11px; color: #f85149; font-weight: 600; }
+.si-company-expanded { margin-top: 12px; padding-top: 12px; border-top: 1px solid #21262d; }
+.si-expanded-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: #c9d1d9; }
+.si-expanded-label { color: #8b949e; font-weight: 500; }
+.si-risk-report-btn { margin-top: 10px; width: 100%; background: #238636; border: none; border-radius: 6px; color: #fff; padding: 7px 0; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.si-risk-report-btn:hover { background: #2ea043; }
+.si-network-section { margin-bottom: 8px; }
+.si-legend { display: flex; gap: 16px; margin-bottom: 12px; }
+.si-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8b949e; }
+.si-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.si-graph-container { background: #161b22; border: 1px solid #30363d; border-radius: 8px; height: 400px; overflow: hidden; }
+
+/* WorkforceRiskView */
+.workforce-step { border: 1px solid #30363d; border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+.workforce-step-header { width: 100%; background: #161b22; border: none; color: #c9d1d9; padding: 10px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 13px; text-align: left; }
+.workforce-step-header:hover { background: #1c2129; }
+.workforce-step-index { font-weight: 600; color: #58a6ff; }
+.workforce-step-duration { font-size: 11px; color: #8b949e; margin-left: auto; }
+.workforce-step-toggle { font-size: 10px; color: #484f58; margin-left: 8px; }
+.workforce-step-body { padding: 14px 16px; background: #0d1117; border-top: 1px solid #30363d; font-size: 13px; line-height: 1.7; }
+.workforce-steps-toggle { width: 100%; background: none; border: none; color: #8b949e; font-size: 13px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 4px 0; }
+.workforce-steps-toggle:hover { color: #c9d1d9; }
+
+/* Markdown output inside WorkforceRiskView */
+.markdown-body { font-size: 14px; line-height: 1.75; color: #c9d1d9; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 { color: #e6edf3; margin: 16px 0 8px; font-weight: 600; }
+.markdown-body h3 { font-size: 15px; }
+.markdown-body p { margin-bottom: 10px; }
+.markdown-body ul, .markdown-body ol { padding-left: 20px; margin-bottom: 10px; }
+.markdown-body li { margin-bottom: 4px; }
+.markdown-body strong { color: #e6edf3; font-weight: 600; }
+.markdown-body a { color: #58a6ff; }
+.markdown-body code { background: #161b22; padding: 2px 6px; border-radius: 4px; font-size: 12px; }

@@ -194,3 +194,55 @@ export async function fetchSayariUBO(entityId: string): Promise<SayariUBORespons
   })
   return parseJson<SayariUBOResponse>(res)
 }
+
+// ── BuildWorkforce Sector Risk Analysis ─────────────────────────────────────
+
+const WORKFORCE_TEAM_ID = '56487d92-a610-4875-8263-07a4d4afb6eb'
+const WORKFORCE_API_KEY = '6FCkHcYt0AFn+Fo/M8p/WD/vBcrbR6xJuoGCS84WfSI='
+const WORKFORCE_BASE = 'https://api.buildworkforce.ai/api/v2/public'
+
+export interface WorkforceStep {
+  id: string
+  nodeId: string
+  startedAt: string
+  completedAt: string | null
+  sessionId: string
+  output: string | null
+  error: string | null
+  awaitingApproval: boolean
+}
+
+export interface WorkforceRunResponse {
+  id: string
+  teamId: string
+  teamName: string
+  startedAt: string
+  completedAt: string | null
+  status: 'running' | 'complete' | 'failed'
+  arguments: { UserInput: string }
+  steps: WorkforceStep[]
+  output: string | null
+}
+
+export async function startWorkforceRun(sector: string): Promise<{ id: string }> {
+  const res = await fetch(`${WORKFORCE_BASE}/teams/${WORKFORCE_TEAM_ID}/run`, {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'X-API-KEY': WORKFORCE_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ UserInput: `Tell me about the ${sector} industry` }),
+  })
+  return parseJson<{ id: string }>(res)
+}
+
+export async function pollWorkforceRun(runId: string): Promise<WorkforceRunResponse> {
+  const res = await fetch(`${WORKFORCE_BASE}/teams/${WORKFORCE_TEAM_ID}/runs/${runId}`, {
+    headers: {
+      'accept': 'application/json',
+      'X-API-KEY': WORKFORCE_API_KEY,
+    },
+  })
+  return parseJson<WorkforceRunResponse>(res)
+}

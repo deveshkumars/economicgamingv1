@@ -11,6 +11,9 @@ import {
   pollAnalysisStatus,
   fetchSayariResolve,
   fetchSayariUBO,
+  startWorkforceRun,
+  pollWorkforceRun,
+  type WorkforceRunResponse,
 } from './api'
 import Header from './components/Header'
 import QueryBox, { extractTicker } from './components/QueryBox'
@@ -21,7 +24,8 @@ import ProjectionSummary from './components/ProjectionSummary'
 import ComparablesTable from './components/ComparablesTable'
 import EntityGraphSection from './components/EntityGraphSection'
 import PersonView from './components/PersonView'
-import SectorView from './components/SectorView'
+import SectorIntelligenceView from './components/SectorIntelligenceView'
+import WorkforceRiskView from './components/WorkforceRiskView'
 import VesselReport from './components/VesselReport'
 import OrchestratorView from './components/OrchestratorView'
 import NarrativeCard from './components/NarrativeCard'
@@ -64,7 +68,8 @@ export default function App() {
 
   const [impactData, setImpactData] = useState<SanctionsImpactResponse | null>(null)
   const [personData, setPersonData] = useState<PersonProfileResponse | null>(null)
-  const [sectorData, setSectorData] = useState<SectorAnalysisResponse | null>(null)
+  const [sectorIntelData, setSectorIntelData] = useState<SectorAnalysisResponse | null>(null)
+  const [workforceData, setWorkforceData] = useState<WorkforceRunResponse | null>(null)
   const [vesselData, setVesselData] = useState<VesselTrackResponse | null>(null)
   const [orchestratorData, setOrchestratorData] = useState<ImpactAssessmentResult | null>(null)
   const [graphData, setGraphData] = useState<EntityGraphResponse | null>(null)
@@ -93,7 +98,7 @@ export default function App() {
     setMode(null)
     setImpactData(null)
     setPersonData(null)
-    setSectorData(null)
+    setSectorIntelData(null); setWorkforceData(null)
     setVesselData(null)
     setOrchestratorData(null)
     setGraphData(null)
@@ -142,7 +147,7 @@ export default function App() {
     setLoading(true)
     setImpactData(null)
     setPersonData(null)
-    setSectorData(null)
+    setSectorIntelData(null); setWorkforceData(null)
     setVesselData(null)
     setOrchestratorData(null)
     setGraphData(null)
@@ -234,15 +239,13 @@ export default function App() {
   }
 
   async function runSectorAnalysis(raw: string) {
-    addProgress(`Analyzing sector: ${raw}`)
-    addProgress('Checking key players for sanctions exposure (OFAC)...')
-    try {
-      const data = await fetchSectorAnalysis(raw)
+    addProgress(`Starting Sector Risk Analysis: ${raw}`)
+
+    const intelPromise = fetchSectorAnalysis(raw).then((data) => {
       addProgress(
         `${data.sanctioned_count} of ${data.company_count} key players have OFAC designations`,
-        'done',
       )
-      setSectorData(data)
+      setSectorIntelData(data)
       if (data.graph.nodes.length > 0) {
         setGraphData({
           nodes: data.graph.nodes,
@@ -250,9 +253,33 @@ export default function App() {
           meta: { query: raw, node_count: data.graph.nodes.length, edge_count: data.graph.edges.length },
         })
       }
-    } catch (e) {
-      addProgress(`Error: ${(e as Error).message}`, 'error')
-    }
+    }).catch((e) => {
+      addProgress(`Sector intel error: ${(e as Error).message}`, 'error')
+    })
+
+    const workforcePromise = (async () => {
+      try {
+        addProgress('Starting BuildWorkforce AI sector report...')
+        const { id: runId } = await startWorkforceRun(raw)
+        let done = false
+        while (!done) {
+          await new Promise((r) => setTimeout(r, 3000))
+          const status = await pollWorkforceRun(runId)
+          if (status.status === 'complete') {
+            addProgress('Sector risk analysis complete!', 'done')
+            setWorkforceData(status)
+            done = true
+          } else if (status.status === 'failed') {
+            addProgress('AI report failed', 'error')
+            done = true
+          }
+        }
+      } catch (e) {
+        addProgress(`BuildWorkforce error: ${(e as Error).message}`, 'error')
+      }
+    })()
+
+    await Promise.all([intelPromise, workforcePromise])
   }
 
   async function runVesselAnalysis(raw: string) {
@@ -293,7 +320,7 @@ export default function App() {
     setLoading(true)
     setImpactData(null)
     setPersonData(null)
-    setSectorData(null)
+    setSectorIntelData(null); setWorkforceData(null)
     setVesselData(null)
     setOrchestratorData(null)
     setGraphData(null)
@@ -479,8 +506,14 @@ export default function App() {
         )}
 
         {/* Sector analysis view */}
-        {mode === 'sector' && sectorData && (
-          <SectorView data={sectorData} />
+        {mode === 'sector' && workforceData && (
+          <WorkforceRiskView data={workforceData} />
+        )}
+        {mode === 'sector' && sectorIntelData && (
+          <SectorIntelligenceView
+            data={sectorIntelData}
+            onRunRisk={(ticker) => { setQuery(ticker); startAnalysis(ticker) }}
+          />
         )}
 
         {/* Vessel intelligence view */}
@@ -511,8 +544,11 @@ export default function App() {
         {mode === 'person' && personData && (
           <DebugPanel data={personData} label="Raw API Response — person-profile" />
         )}
-        {mode === 'sector' && sectorData && (
-          <DebugPanel data={sectorData} label="Raw API Response — sector-analysis" />
+        {mode === 'sector' && workforceData && (
+          <DebugPanel data={workforceData} label="Raw API Response — workforce-sector-risk" />
+        )}
+        {mode === 'sector' && sectorIntelData && (
+          <DebugPanel data={sectorIntelData} label="Raw API Response — sector-analysis" />
         )}
         {mode === 'vessel' && vesselData && (
           <DebugPanel data={vesselData} label="Raw API Response — vessel-track" />
