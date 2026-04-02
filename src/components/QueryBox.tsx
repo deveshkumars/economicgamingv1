@@ -36,16 +36,12 @@ interface Example {
 }
 
 const EXAMPLES: Example[] = [
-  // Companies
   { label: 'Sanction Alibaba (BABA)', ticker: 'BABA' },
-  { label: 'What if we sanction TSMC?', ticker: 'TSM' },
-  // Persons
-  { label: 'Viktor Vekselberg' },
-  { label: 'Roman Abramovich' },
-  // Vessels
-  { label: 'Track vessel LADY M' },
-  // Sectors
-  { label: 'Semiconductor sector' },
+  { label: 'Sanction SMIC (0981.HK)', ticker: '0981.HK' },
+  { label: 'What if we sanction TSMC? (TSM)', ticker: 'TSM' },
+  { label: 'Sanction Baidu (BIDU)', ticker: 'BIDU' },
+  { label: 'ZTE Corp (0763.HK)', ticker: '0763.HK' },
+  { label: 'Intel chip restrictions (INTC)', ticker: 'INTC' },
 ]
 
 interface Props {
