@@ -509,6 +509,31 @@ export interface VesselTrackResponse {
   sources: string[];
 }
 
+// --- BuildWorkforce AI ---
+
+export interface BuildWorkforceStep {
+  id: string;
+  nodeId: string;
+  startedAt: string;
+  completedAt: string | null;
+  sessionId: string;
+  output: string | null;
+  error: string | null;
+  awaitingApproval: boolean;
+}
+
+export interface BuildWorkforceRunStatus {
+  id: string;
+  teamId: string;
+  teamName: string;
+  startedAt: string;
+  completedAt: string | null;
+  status: 'running' | 'complete' | 'failed' | string;
+  arguments: Record<string, string>;
+  steps: BuildWorkforceStep[];
+  output: string | null;
+}
+
 // --- Shared utility types ---
 
 export type EntityType = 'company' | 'person' | 'sector' | 'vessel';

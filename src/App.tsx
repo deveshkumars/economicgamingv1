@@ -11,6 +11,8 @@ import {
   pollAnalysisStatus,
   fetchSayariResolve,
   fetchSayariUBO,
+  startBuildWorkforceRun,
+  pollBuildWorkforceRun,
 } from './api'
 import Header from './components/Header'
 import QueryBox, { extractTicker } from './components/QueryBox'
@@ -22,7 +24,7 @@ import ComparablesTable from './components/ComparablesTable'
 import EntityGraphSection from './components/EntityGraphSection'
 import PersonView from './components/PersonView'
 import SectorView from './components/SectorView'
-import VesselView from './components/VesselView'
+import VesselView from './components/VesselReport'
 import OrchestratorView from './components/OrchestratorView'
 import NarrativeCard from './components/NarrativeCard'
 import DebugPanel from './components/DebugPanel'
@@ -37,6 +39,7 @@ import type {
   VesselTrackResponse,
   ImpactAssessmentResult,
   SayariUBOOwner,
+  BuildWorkforceRunStatus,
 } from './types'
 import './App.css'
 
@@ -70,6 +73,9 @@ export default function App() {
   const [graphData, setGraphData] = useState<EntityGraphResponse | null>(null)
   const [graphLoading, setGraphLoading] = useState(false)
 
+  const [buildworkforceData, setBuildworkforceData] = useState<BuildWorkforceRunStatus | null>(null)
+  const [buildworkforceLoading, setBuildworkforceLoading] = useState(false)
+
   const [uboOwners, setUboOwners] = useState<SayariUBOOwner[]>([])
   const [uboLoading, setUboLoading] = useState(false)
   const [uboTargetName, setUboTargetName] = useState('')
@@ -98,6 +104,8 @@ export default function App() {
     setOrchestratorData(null)
     setGraphData(null)
     setGraphLoading(false)
+    setBuildworkforceData(null)
+    setBuildworkforceLoading(false)
     setUboOwners([])
     setUboLoading(false)
     setUboTargetName('')
@@ -147,6 +155,8 @@ export default function App() {
     setOrchestratorData(null)
     setGraphData(null)
     setGraphLoading(false)
+    setBuildworkforceData(null)
+    setBuildworkforceLoading(false)
     setUboOwners([])
     setUboLoading(false)
     setUboTargetName('')
@@ -236,6 +246,11 @@ export default function App() {
   async function runSectorAnalysis(raw: string) {
     addProgress(`Analyzing sector: ${raw}`)
     addProgress('Checking key players for sanctions exposure (OFAC)...')
+
+    // Kick off BuildWorkforce AI analysis in the background
+    setBuildworkforceLoading(true)
+    startBuildWorkforceAIAnalysis(raw)
+
     try {
       const data = await fetchSectorAnalysis(raw)
       addProgress(
@@ -252,6 +267,33 @@ export default function App() {
       }
     } catch (e) {
       addProgress(`Error: ${(e as Error).message}`, 'error')
+    }
+  }
+
+  async function startBuildWorkforceAIAnalysis(sector: string) {
+    try {
+      const { id: runId } = await startBuildWorkforceRun(sector)
+      // Poll every 3 seconds until complete
+      let attempts = 0
+      const maxAttempts = 40  // 2 minutes max
+      while (attempts < maxAttempts) {
+        await new Promise<void>((r) => setTimeout(r, 3000))
+        const status = await pollBuildWorkforceRun(runId)
+        if (status.status === 'complete' || status.status === 'failed') {
+          setBuildworkforceData(status)
+          setBuildworkforceLoading(false)
+          return
+        }
+        // Show partial step progress
+        const completedSteps = status.steps.filter((s) => s.completedAt).length
+        if (completedSteps > 0) {
+          setBuildworkforceData(status)
+        }
+        attempts++
+      }
+      setBuildworkforceLoading(false)
+    } catch {
+      setBuildworkforceLoading(false)
     }
   }
 
@@ -361,7 +403,6 @@ export default function App() {
           health={health}
           onQueryChange={setQuery}
           onAnalyze={startAnalysis}
-          onOrchestrate={(q) => runOrchestratorAnalysis(q)}
           onClear={clearAll}
         />
 
@@ -481,7 +522,11 @@ export default function App() {
 
         {/* Sector analysis view */}
         {mode === 'sector' && sectorData && (
-          <SectorView data={sectorData} />
+          <SectorView
+            data={sectorData}
+            buildworkforceData={buildworkforceData}
+            buildworkforceLoading={buildworkforceLoading}
+          />
         )}
 
         {/* Vessel intelligence view */}

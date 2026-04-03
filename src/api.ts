@@ -13,6 +13,7 @@ import type {
   SayariUBOResponse,
   EntityRiskReport,
   SanctionsScreenBatchResponse,
+  BuildWorkforceRunStatus,
 } from './types'
 
 const API_BASE =
@@ -183,6 +184,22 @@ export async function fetchFollowUp(
     body: JSON.stringify({ question, context_type: contextType, context, history }),
   })
   return parseJson<{ answer: string }>(res)
+}
+
+export async function startBuildWorkforceRun(sector: string): Promise<{ id: string }> {
+  const url = `${API_BASE}/api/buildworkforce/run`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ UserInput: `Tell me about the ${sector} industry` }),
+  })
+  return parseJson<{ id: string }>(res)
+}
+
+export async function pollBuildWorkforceRun(runId: string): Promise<BuildWorkforceRunStatus> {
+  const url = `${API_BASE}/api/buildworkforce/runs/${runId}`
+  const res = await fetch(url)
+  return parseJson<BuildWorkforceRunStatus>(res)
 }
 
 export async function fetchSayariUBO(entityId: string): Promise<SayariUBOResponse> {
